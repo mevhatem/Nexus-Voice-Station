@@ -13,8 +13,8 @@ export const ScreenShareModal: React.FC<ScreenShareModalProps> = ({
   onClose,
   onStartShare,
 }) => {
-  const [resolution, setResolution] = useState<ScreenQuality>('1080p');
-  const [fps, setFps] = useState<ScreenFps>(60);
+  const [resolution, setResolution] = useState<ScreenQuality>('720p');
+  const [fps, setFps] = useState<ScreenFps>(30);
   const [includeAudio, setIncludeAudio] = useState<boolean>(true);
 
   if (!isOpen) return null;
@@ -39,7 +39,7 @@ export const ScreenShareModal: React.FC<ScreenShareModalProps> = ({
             </div>
             <div>
               <span>CANLI EKRAN YAYINI</span>
-              <p className="text-[10px] text-cyber-textMuted font-sans font-normal">P2P Doğrudan Akış (Zero Lag)</p>
+              <p className="text-[10px] text-cyber-textMuted font-sans font-normal">P2P Doğrudan Akış (Düşük Kaynak Tüketimi)</p>
             </div>
           </div>
           <button
@@ -59,9 +59,9 @@ export const ScreenShareModal: React.FC<ScreenShareModalProps> = ({
             </label>
             <div className="grid grid-cols-3 gap-2.5">
               {[
-                { id: '720p', label: '720p HD', desc: 'Düşük Veri & Hafif' },
-                { id: '1080p', label: '1080p FHD', desc: 'Kristal Netlik' },
-                { id: 'source', label: 'Kaynak (Orijinal)', desc: 'Tam Monitör' },
+                { id: '720p', label: '720p HD', desc: 'Önerilen • Ultra Hafif' },
+                { id: '1080p', label: '1080p FHD', desc: 'Kristal Netlik (Güçlü PC)' },
+                { id: 'source', label: 'Kaynak', desc: 'Tam Monitör Boyutu' },
               ].map((res) => (
                 <button
                   key={res.id}
@@ -89,8 +89,8 @@ export const ScreenShareModal: React.FC<ScreenShareModalProps> = ({
             </label>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { fps: 30, label: '30 FPS', desc: 'Standart (Masaüstü, Kod, Tarayıcı)' },
-                { fps: 60, label: '60 FPS', desc: 'Akıcı (Oyun & Video için İdeal)' },
+                { fps: 30, label: '30 FPS', desc: 'Önerilen • Donma / Kilitlenme Yapmaz' },
+                { fps: 60, label: '60 FPS', desc: 'Yüksek Akıcılık (Harici GPU Gerekir)' },
               ].map((item) => (
                 <button
                   key={item.fps}

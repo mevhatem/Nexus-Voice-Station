@@ -96,11 +96,11 @@ export const VoiceStage: React.FC<VoiceStageProps> = ({
   const [volumeMenuPeerId, setVolumeMenuPeerId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (videoRef.current && screenShareInfo.stream) {
+    if (videoRef.current && screenShareInfo.stream && screenShareInfo.sharerId !== currentUser.id) {
       videoRef.current.srcObject = screenShareInfo.stream;
       videoRef.current.play().catch(() => {});
     }
-  }, [screenShareInfo.stream]);
+  }, [screenShareInfo.stream, screenShareInfo.sharerId, currentUser.id]);
 
   const handleToggleFullscreen = () => {
     if (!containerRef.current) return;
@@ -332,37 +332,84 @@ export const VoiceStage: React.FC<VoiceStageProps> = ({
         /* 2. IN-ROOM STAGE (Screen Share OR Avatar Circles) */
         screenShareInfo.isSharing && screenShareInfo.stream ? (
           <div className="flex-1 flex flex-col justify-between overflow-hidden gap-3 py-3 z-0">
-            {/* Cinema Screen Video Player */}
-            <div
-              ref={containerRef}
-              className="flex-1 relative rounded-3xl overflow-hidden glass-panel border border-cyber-cyan/30 bg-black/95 flex items-center justify-center shadow-2xl group min-h-0"
-            >
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted={isStreamAudioMuted || screenShareInfo.sharerId === currentUser.id}
-                className="w-full h-full object-contain max-h-[calc(100vh-230px)]"
-              />
+            {screenShareInfo.sharerId === currentUser.id ? (
+              /* SHARER VIEW: High-Performance Live Dashboard (No Infinite Mirror Loop & Zero GPU Lag) */
+              <div className="flex-1 relative rounded-3xl overflow-hidden glass-panel border border-cyber-cyan/30 bg-black/75 flex flex-col items-center justify-center p-8 shadow-2xl min-h-0">
+                {/* Ambient Cyan Aura */}
+                <div className="absolute w-80 h-80 bg-cyber-cyan/10 rounded-full blur-[100px] pointer-events-none" />
 
-              {/* Top Stream Overlay */}
-              <div className="absolute top-4 left-4 right-4 flex items-center justify-between opacity-90 group-hover:opacity-100 transition-opacity pointer-events-auto">
-                <div className="flex items-center gap-2.5 bg-black/75 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-white/10 shadow-lg">
-                  <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 text-[10px] font-mono text-red-400 font-bold uppercase tracking-wider animate-pulse">
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-400" /> CANLI
-                  </span>
-                  <span className="text-xs font-mono font-bold text-white flex items-center gap-1.5">
-                    <Tv className="w-3.5 h-3.5 text-cyber-cyan" />
-                    {screenShareInfo.sharerId === currentUser.id ? 'Senin Yayının' : `${screenShareInfo.sharerName} Yayını`}
-                  </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-cyber-cyan">
-                    {screenShareInfo.resolution.toUpperCase()} • {screenShareInfo.fps} FPS
-                  </span>
+                <div className="relative z-10 flex flex-col items-center text-center max-w-lg space-y-4">
+                  <div className="w-16 h-16 rounded-3xl bg-cyber-cyan/10 border border-cyber-cyan/30 flex items-center justify-center text-cyber-cyan shadow-xl shadow-cyber-cyan/20">
+                    <Tv className="w-8 h-8 animate-pulse" />
+                  </div>
+
+                  <div>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-[10px] font-mono text-emerald-300 font-bold uppercase tracking-wider mb-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                      YAYININ CANLI AKTARILIYOR
+                    </span>
+                    <h3 className="text-xl font-bold font-mono text-white">Ekranını Başarıyla Paylaşıyorsun</h3>
+                    <p className="text-xs text-cyber-textMuted mt-1 leading-relaxed">
+                      Sonsuz ayna döngüsünü (ekran içinde ekran) ve bilgisayarın kilitlenmesini önlemek için yayın burada duraklatıldı. Odadaki arkadaşların ekranını akıcı şekilde izliyor.
+                    </p>
+                  </div>
+
+                  {/* Status Badges */}
+                  <div className="flex items-center gap-2 pt-1 font-mono text-xs">
+                    <span className="px-3 py-1 rounded-xl bg-white/5 border border-white/10 text-cyber-cyan font-bold">
+                      {screenShareInfo.resolution.toUpperCase()}
+                    </span>
+                    <span className="px-3 py-1 rounded-xl bg-white/5 border border-white/10 text-cyber-purple font-bold">
+                      {screenShareInfo.fps} FPS
+                    </span>
+                    <span className="px-3 py-1 rounded-xl bg-white/5 border border-white/10 text-emerald-400 font-bold">
+                      P2P Direct
+                    </span>
+                  </div>
+
+                  {/* Stop Sharing Button */}
+                  <div className="pt-2">
+                    <button
+                      onClick={onStopScreenShare}
+                      className="px-6 py-2.5 rounded-2xl bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/40 text-xs font-mono font-bold transition-all shadow-lg shadow-red-500/20 flex items-center gap-2"
+                    >
+                      <PhoneOff className="w-4 h-4" />
+                      Yayını Durdur
+                    </button>
+                  </div>
                 </div>
+              </div>
+            ) : (
+              /* VIEWER VIEW: Cinema Screen Video Player */
+              <div
+                ref={containerRef}
+                className="flex-1 relative rounded-3xl overflow-hidden glass-panel border border-cyber-cyan/30 bg-black/95 flex items-center justify-center shadow-2xl group min-h-0"
+              >
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted={isStreamAudioMuted}
+                  className="w-full h-full object-contain max-h-[calc(100vh-230px)]"
+                />
 
-                {/* Controls */}
-                <div className="flex items-center gap-1.5 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-white/10 shadow-lg">
-                  {screenShareInfo.sharerId !== currentUser.id && (
+                {/* Top Stream Overlay */}
+                <div className="absolute top-4 left-4 right-4 flex items-center justify-between opacity-90 group-hover:opacity-100 transition-opacity pointer-events-auto">
+                  <div className="flex items-center gap-2.5 bg-black/75 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-white/10 shadow-lg">
+                    <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 text-[10px] font-mono text-red-400 font-bold uppercase tracking-wider animate-pulse">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-400" /> CANLI
+                    </span>
+                    <span className="text-xs font-mono font-bold text-white flex items-center gap-1.5">
+                      <Tv className="w-3.5 h-3.5 text-cyber-cyan" />
+                      {screenShareInfo.sharerName} Yayını
+                    </span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-cyber-cyan">
+                      {screenShareInfo.resolution.toUpperCase()} • {screenShareInfo.fps} FPS
+                    </span>
+                  </div>
+
+                  {/* Controls */}
+                  <div className="flex items-center gap-1.5 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-2xl border border-white/10 shadow-lg">
                     <button
                       onClick={toggleStreamAudio}
                       className="p-1.5 rounded-xl hover:bg-white/10 text-gray-300 hover:text-white transition-colors"
@@ -370,27 +417,18 @@ export const VoiceStage: React.FC<VoiceStageProps> = ({
                     >
                       {isStreamAudioMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4" />}
                     </button>
-                  )}
 
-                  <button
-                    onClick={handleToggleFullscreen}
-                    className="p-1.5 rounded-xl hover:bg-white/10 text-gray-300 hover:text-white transition-colors"
-                    title="Tam Ekran Modu"
-                  >
-                    {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                  </button>
-
-                  {screenShareInfo.sharerId === currentUser.id && (
                     <button
-                      onClick={onStopScreenShare}
-                      className="px-3 py-1 rounded-xl bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/30 text-[11px] font-mono font-bold transition-all ml-1 shadow-md shadow-red-500/20"
+                      onClick={handleToggleFullscreen}
+                      className="p-1.5 rounded-xl hover:bg-white/10 text-gray-300 hover:text-white transition-colors"
+                      title="Tam Ekran Modu"
                     >
-                      Yayını Durdur
+                      {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
                     </button>
-                  )}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Compact Speaking Participants Bar while Watching Stream */}
             <div className="flex items-center justify-center gap-3 overflow-x-auto py-1 px-4 shrink-0">

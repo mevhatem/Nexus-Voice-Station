@@ -813,6 +813,9 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
       } else if (options.resolution === '1080p') {
         videoConstraints.width = { ideal: 1920, max: 1920 };
         videoConstraints.height = { ideal: 1080, max: 1080 };
+      } else {
+        videoConstraints.width = { max: 1920 };
+        videoConstraints.height = { max: 1080 };
       }
 
       const stream = await navigator.mediaDevices.getDisplayMedia({
@@ -821,6 +824,15 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
       });
 
       localScreenStreamRef.current = stream;
+
+      const videoTrack = stream.getVideoTracks()[0];
+      if (videoTrack) {
+        // Crucial: 'detail' hint drastically cuts CPU usage for static screens & text
+        videoTrack.contentHint = 'detail';
+        videoTrack.onended = () => {
+          stopScreenShare();
+        };
+      }
 
       const newInfo: ScreenShareInfo = {
         isSharing: true,
@@ -831,13 +843,6 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
         stream,
       };
       setScreenShareInfo(newInfo);
-
-      const videoTrack = stream.getVideoTracks()[0];
-      if (videoTrack) {
-        videoTrack.onended = () => {
-          stopScreenShare();
-        };
-      }
 
       dataConnsRef.current.forEach((_conn, peerId) => {
         if (peerRef.current) {
@@ -850,6 +855,25 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
               sharerName: currentUser.name,
             },
           });
+
+          // Cap bitrate on the WebRTC sender to avoid CPU encoder lockup
+          try {
+            const pc = (sc as any).peerConnection as RTCPeerConnection | undefined;
+            if (pc) {
+              const senders = pc.getSenders?.() || [];
+              senders.forEach((sender) => {
+                if (sender.track?.kind === 'video') {
+                  const params = sender.getParameters();
+                  if (!params.encodings || params.encodings.length === 0) {
+                    params.encodings = [{}];
+                  }
+                  params.encodings[0].maxBitrate = options.resolution === '720p' ? 2200000 : 4000000;
+                  sender.setParameters(params).catch(() => {});
+                }
+              });
+            }
+          } catch {}
+
           screenCallsRef.current.set(peerId, sc);
         }
       });
