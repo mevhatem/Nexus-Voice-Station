@@ -7,6 +7,19 @@ Nexus Voice Station is a high-performance, privacy-focused alternative to heavy 
 
 ---
 
+## 📥 Hızlı İndir / Quick Download (Kurulumsuz Portable)
+
+> 💡 **Programı kullanmak için Rust, Node.js veya kod derlemenize KESİNLİKLE GEREK YOKTUR!**  
+> Son kullanıcılar için hazır `.exe` içeren kurulumsuz taşınabilir paket mevcuttur:
+
+👉 **[En Güncel Sürümü İndir (Releases)](https://github.com/mevhatem/Nexus-Voice-Station/releases)**
+
+1. [Releases](https://github.com/mevhatem/Nexus-Voice-Station/releases) sayfasından `NexusVoiceStation_Kurulumsuz.zip` dosyasını indirin.
+2. Zip dosyasını klasöre çıkartın.
+3. `NexusVoice.exe` dosyasına çift tıklayarak anında çalıştırın!
+
+---
+
 ## ✨ Key Features
 
 - **⚡ Ultra-Low Resource Usage:** Uses native Windows WebView2 and Rust (~38 MB RAM vs. ~650 MB+ in Electron apps).
