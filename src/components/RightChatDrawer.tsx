@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Message, Friend } from '../types';
 import { X, Send, Paperclip, MessageSquare, Image as ImageIcon, ZoomIn } from 'lucide-react';
+import { useLanguage } from '../i18n';
 
 interface RightChatDrawerProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export const RightChatDrawer: React.FC<RightChatDrawerProps> = ({
   currentUser,
   onSendMessage,
 }) => {
+  const { t } = useLanguage();
   const [inputText, setInputText] = useState('');
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
@@ -108,7 +110,7 @@ export const RightChatDrawer: React.FC<RightChatDrawerProps> = ({
         <div className="p-4 border-b border-white/10 flex items-center justify-between bg-black/40">
           <div className="flex items-center gap-2 text-white font-bold text-sm font-mono">
             <MessageSquare className="w-4 h-4 text-cyber-cyan" />
-            <span>P2P Canlı Sohbet</span>
+            <span>{t('chat.title')}</span>
           </div>
           <button
             onClick={onClose}
@@ -122,8 +124,7 @@ export const RightChatDrawer: React.FC<RightChatDrawerProps> = ({
         <div className="flex-1 overflow-y-auto p-4 space-y-3.5">
           {messages.length === 0 ? (
             <div className="text-center py-10 text-cyber-textMuted text-xs space-y-1">
-              <p>Henüz mesaj yok.</p>
-              <p className="text-[10px] text-gray-500">Yazabilir veya ekran görüntüsü yapıştırabilirsiniz (Ctrl+V)!</p>
+              <p>{t('chat.empty')}</p>
             </div>
           ) : (
             messages.map((msg) => (
@@ -209,7 +210,7 @@ export const RightChatDrawer: React.FC<RightChatDrawerProps> = ({
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="p-1.5 text-cyber-textMuted hover:text-cyber-cyan hover:bg-white/5 rounded-lg transition-colors"
-              title="Görsel veya Ekran Görüntüsü Yükle"
+              title={t('chat.uploadImage')}
             >
               <Paperclip className="w-4 h-4" />
             </button>
@@ -220,7 +221,7 @@ export const RightChatDrawer: React.FC<RightChatDrawerProps> = ({
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onPaste={handlePaste}
-              placeholder="Mesaj yaz veya görsel yapıştır (Ctrl+V)..."
+              placeholder={t('chat.placeholder')}
               className="bg-transparent flex-1 text-xs text-white placeholder-cyber-textMuted outline-none px-1"
             />
 

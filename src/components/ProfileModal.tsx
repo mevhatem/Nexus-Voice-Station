@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Friend } from '../types';
 import { Upload, Sparkles, Check, User as UserIcon, X, Smile } from 'lucide-react';
+import { useLanguage } from '../i18n';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   onClose,
   isEditing = false,
 }) => {
+  const { t } = useLanguage();
   const [name, setName] = useState(initialProfile?.name || '');
   const [selectedAvatar, setSelectedAvatar] = useState(
     initialProfile?.avatar || PRESET_AVATARS[0]
@@ -89,12 +91,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             <Sparkles className="w-6 h-6 text-black" />
           </div>
           <h2 className="text-lg font-bold text-white font-mono tracking-wider">
-            {isEditing ? 'NEXUS PROFİLİNİ DÜZENLE' : 'NEXUS PROFİLİNİ OLUŞTUR'}
+            {t('profile.title')}
           </h2>
           <p className="text-xs text-cyber-textMuted">
             {isEditing
-              ? 'Kullanıcı adını, avatarını ve durum mesajını güncelle'
-              : 'Arkadaşlarının ses odasında seni nasıl göreceğini belirle'}
+              ? t('profile.title')
+              : 'Nexus Voice Station'}
           </p>
         </div>
 
@@ -104,7 +106,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             <div className="relative group">
               <img
                 src={selectedAvatar}
-                alt="Seçili Avatar"
+                alt="Avatar"
                 className="w-20 h-20 rounded-full object-cover ring-4 ring-cyber-cyan shadow-xl shadow-cyber-cyan/30"
               />
               <button
@@ -113,16 +115,16 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 className="absolute inset-0 rounded-full bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-[10px] text-white transition-opacity font-mono"
               >
                 <Upload className="w-4 h-4 mb-0.5 text-cyber-cyan" />
-                Değiştir
+                {t('settings.editProfile')}
               </button>
             </div>
-            <span className="text-[10px] text-cyber-textMuted font-mono">Önizleme</span>
+            <span className="text-[10px] text-cyber-textMuted font-mono">Avatar</span>
           </div>
 
           {/* Nickname Input */}
           <div className="space-y-1">
             <label className="text-[11px] font-mono text-cyber-textMuted uppercase">
-              Kullanıcı Adı / Nickname
+              {t('profile.name')}
             </label>
             <div className="glass-panel px-3 py-2 rounded-xl flex items-center gap-2 border border-white/10 focus-within:border-cyber-cyan">
               <UserIcon className="w-4 h-4 text-cyber-cyan" />
@@ -131,7 +133,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Örn: AhmetDev"
+                placeholder={t('profile.name')}
                 className="bg-transparent flex-1 text-xs text-white placeholder-gray-500 outline-none font-mono"
               />
             </div>
@@ -140,7 +142,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           {/* Custom Status / Bio Input */}
           <div className="space-y-1">
             <label className="text-[11px] font-mono text-cyber-textMuted uppercase">
-              Özel Durum Mesajı (İsteğe Bağlı)
+              {t('profile.status')}
             </label>
             <div className="glass-panel px-3 py-2 rounded-xl flex items-center gap-2 border border-white/10 focus-within:border-cyber-cyan">
               <Smile className="w-4 h-4 text-cyber-purple" />
@@ -148,7 +150,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 type="text"
                 value={customStatus}
                 onChange={(e) => setCustomStatus(e.target.value)}
-                placeholder="Örn: 🎮 Valorant | 🎧 Müzik dinliyor"
+                placeholder={t('profile.statusPlaceholder')}
                 className="bg-transparent flex-1 text-xs text-white placeholder-gray-500 outline-none font-mono"
               />
             </div>
@@ -157,13 +159,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           {/* Avatar Choice Selection */}
           <div className="space-y-2">
             <label className="text-[11px] font-mono text-cyber-textMuted uppercase flex items-center justify-between">
-              <span>Avatar Seçimi</span>
+              <span>{t('profile.avatar')}</span>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 className="text-cyber-cyan hover:underline text-[11px] flex items-center gap-1"
               >
-                <Upload className="w-3 h-3" /> PC'den Yükle
+                <Upload className="w-3 h-3" /> Upload
               </button>
             </label>
 
@@ -211,7 +213,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 onClick={onClose}
                 className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 font-mono font-semibold text-xs rounded-xl border border-white/10 transition-all"
               >
-                İptal
+                {t('profile.cancel')}
               </button>
             )}
             <button
@@ -219,7 +221,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               disabled={!name.trim()}
               className="flex-1 py-2.5 bg-cyber-cyan text-black font-mono font-bold text-xs rounded-xl hover:bg-opacity-90 transition-all shadow-lg shadow-cyber-cyan/30 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isEditing ? 'KAYDET' : 'İSTASYONA GİRİŞ YAP'}
+              {isEditing ? t('profile.save') : t('left.join')}
             </button>
           </div>
         </form>

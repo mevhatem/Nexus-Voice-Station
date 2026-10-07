@@ -29,6 +29,7 @@ Nexus Voice Station is a high-performance, privacy-focused alternative to heavy 
 - **🖥️ 60 FPS HD Screen Sharing:** Stream your display or specific windows at 720p or 1080p, 30 or 60 FPS, with system audio support.
 - **🎮 Always-on-Top Floating Gaming Overlay:** Transparent, draggable streamer widget showing live glowing speaking rings even when the main app is minimized during gameplay. Includes customizable opacity presets (35%, 50%, 75%, 95%).
 - **👤 Live Profile Customization:** Custom nicknames, custom avatars (presets or PC upload), and live status messages synced across connected peers in real time without reconnecting.
+- **🌍 Multi-Language Localization (i18n):** Instant switching between 5 languages without restart: 🇹🇷 Türkçe, 🇬🇧 English, 🇩🇪 Deutsch, 🇫🇷 Français, and 🇷🇺 Русский (built with zero extra RAM overhead).
 - **🖼️ Image & Rich Text Chat:** Built-in drawer chat supporting image sharing and unread indicators.
 
 ---

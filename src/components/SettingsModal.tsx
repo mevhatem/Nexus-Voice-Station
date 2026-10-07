@@ -14,9 +14,11 @@ import {
   Keyboard,
   User as UserIcon,
   Layers,
+  Globe,
 } from 'lucide-react';
 import { AudioDevice } from '../hooks/useWebRTCVoice';
 import { VoiceInputMode, PttKeyConfig } from '../types';
+import { useLanguage } from '../i18n';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -85,7 +87,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   showRamBadge,
   onToggleRamBadge,
 }) => {
-  const [activeTab, setActiveTab] = useState<'audio' | 'overlay' | 'system'>('audio');
+  const { language, setLanguage, t, languages } = useLanguage();
+  const [activeTab, setActiveTab] = useState<'audio' | 'overlay' | 'language' | 'system'>('audio');
   const [isRecordingPtt, setIsRecordingPtt] = useState(false);
 
   // Key recording listener for Push-to-Talk
@@ -125,7 +128,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-black/40">
           <div className="flex items-center gap-2.5 font-bold text-base text-white font-mono">
             <Sliders className="w-5 h-5 text-cyber-cyan" />
-            <span>NEXUS SES & SİSTEM AYARLARI</span>
+            <span>{t('settings.title')}</span>
           </div>
           <button
             onClick={onClose}
@@ -136,36 +139,46 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-white/10 bg-black/20 px-6 pt-2 gap-4 text-xs font-mono">
+        <div className="flex border-b border-white/10 bg-black/20 px-6 pt-2 gap-4 text-xs font-mono overflow-x-auto">
           <button
             onClick={() => setActiveTab('audio')}
-            className={`pb-2.5 flex items-center gap-2 border-b-2 transition-all font-semibold ${
+            className={`pb-2.5 flex items-center gap-2 border-b-2 transition-all font-semibold shrink-0 ${
               activeTab === 'audio'
                 ? 'border-cyber-cyan text-cyber-cyan'
                 : 'border-transparent text-gray-400 hover:text-white'
             }`}
           >
-            <Mic className="w-4 h-4" /> Ses & Bas-Konuş
+            <Mic className="w-4 h-4" /> {t('settings.tabAudio')}
           </button>
           <button
             onClick={() => setActiveTab('overlay')}
-            className={`pb-2.5 flex items-center gap-2 border-b-2 transition-all font-semibold ${
+            className={`pb-2.5 flex items-center gap-2 border-b-2 transition-all font-semibold shrink-0 ${
               activeTab === 'overlay'
                 ? 'border-cyber-cyan text-cyber-cyan'
                 : 'border-transparent text-gray-400 hover:text-white'
             }`}
           >
-            <Layers className="w-4 h-4" /> Overlay & Profil
+            <Layers className="w-4 h-4" /> {t('settings.tabOverlay')}
+          </button>
+          <button
+            onClick={() => setActiveTab('language')}
+            className={`pb-2.5 flex items-center gap-2 border-b-2 transition-all font-semibold shrink-0 ${
+              activeTab === 'language'
+                ? 'border-cyber-cyan text-cyber-cyan'
+                : 'border-transparent text-gray-400 hover:text-white'
+            }`}
+          >
+            <Globe className="w-4 h-4" /> {t('settings.tabLanguage')}
           </button>
           <button
             onClick={() => setActiveTab('system')}
-            className={`pb-2.5 flex items-center gap-2 border-b-2 transition-all font-semibold ${
+            className={`pb-2.5 flex items-center gap-2 border-b-2 transition-all font-semibold shrink-0 ${
               activeTab === 'system'
                 ? 'border-cyber-cyan text-cyber-cyan'
                 : 'border-transparent text-gray-400 hover:text-white'
             }`}
           >
-            <Cpu className="w-4 h-4" /> Performans & RAM
+            <Cpu className="w-4 h-4" /> {t('settings.tabSystem')}
           </button>
         </div>
 
@@ -177,10 +190,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <div className="glass-panel p-4 rounded-2xl border border-white/5 space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-mono font-bold text-white uppercase flex items-center gap-2">
-                    <Radio className="w-4 h-4 text-cyber-cyan" /> Ses Giriş Modu
+                    <Radio className="w-4 h-4 text-cyber-cyan" /> {t('settings.inputMode')}
                   </h4>
                   <span className="text-[10px] font-mono text-cyber-cyan bg-cyber-cyan/10 px-2 py-0.5 rounded border border-cyber-cyan/20">
-                    {voiceInputMode === 'ptt' ? 'Bas-Konuş Aktif' : 'Ses Etkinliği Aktif'}
+                    {voiceInputMode === 'ptt' ? t('settings.pttActive') : t('settings.vadActive')}
                   </span>
                 </div>
 
@@ -195,11 +208,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-bold font-mono">Ses Etkinliği (Otomatik)</span>
+                      <span className="text-xs font-bold font-mono">{t('settings.vadTitle')}</span>
                       {voiceInputMode === 'vad' && <Check className="w-4 h-4 text-cyber-cyan" />}
                     </div>
                     <span className="text-[10px] text-cyber-textMuted leading-relaxed">
-                      Konuştuğunuzda mikrofon otomatik olarak sesi iletir
+                      {t('settings.vadDesc')}
                     </span>
                   </div>
 
@@ -213,11 +226,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-bold font-mono">Bas-Konuş (Push-to-Talk)</span>
+                      <span className="text-xs font-bold font-mono">{t('settings.pttTitle')}</span>
                       {voiceInputMode === 'ptt' && <Check className="w-4 h-4 text-cyber-purple" />}
                     </div>
                     <span className="text-[10px] text-cyber-textMuted leading-relaxed">
-                      Yalnızca atadığınız tuşa basılı tuttuğunuzda ses gider
+                      {t('settings.pttDesc')}
                     </span>
                   </div>
                 </div>
@@ -227,10 +240,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between bg-black/40 p-3 rounded-xl border border-white/5">
                     <div className="space-y-0.5">
                       <span className="text-xs font-bold font-mono text-white flex items-center gap-1.5">
-                        <Keyboard className="w-3.5 h-3.5 text-cyber-purple" /> Bas-Konuş Tuşu
+                        <Keyboard className="w-3.5 h-3.5 text-cyber-purple" /> {t('settings.pttKey')}
                       </span>
                       <p className="text-[10px] text-cyber-textMuted">
-                        Tuşa basılı tuttuğunuzda konuşursunuz, bırakınca sessize geçer.
+                        {t('settings.pttDesc')}
                       </p>
                     </div>
 
@@ -246,7 +259,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                             : 'bg-white/10 hover:bg-white/20 text-white'
                         }`}
                       >
-                        {isRecordingPtt ? 'Tuşa Basın...' : 'Tuş Değiştir'}
+                        {isRecordingPtt ? t('settings.pttListening') : t('settings.pttSetKey')}
                       </button>
                     </div>
                   </div>
@@ -258,14 +271,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 {/* Input Mic */}
                 <div className="space-y-2">
                   <label className="text-xs font-mono text-cyber-textMuted uppercase flex items-center gap-1.5">
-                    <Mic className="w-3.5 h-3.5 text-cyber-cyan" /> Giriş Aygıtı (Mikrofon)
+                    <Mic className="w-3.5 h-3.5 text-cyber-cyan" /> {t('settings.inputDevice')}
                   </label>
                   <select
                     value={selectedInputId}
                     onChange={(e) => onSelectInputDevice(e.target.value)}
                     className="w-full bg-[#0d1017] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-cyber-cyan font-mono"
                   >
-                    <option value="default">Varsayılan Sistem Mikrofonu</option>
+                    <option value="default">{t('settings.defaultDevice')}</option>
                     {inputDevices.map((d) => (
                       <option key={d.deviceId} value={d.deviceId}>
                         {d.label}
@@ -277,14 +290,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 {/* Output Speaker */}
                 <div className="space-y-2">
                   <label className="text-xs font-mono text-cyber-textMuted uppercase flex items-center gap-1.5">
-                    <Volume2 className="w-3.5 h-3.5 text-cyber-teal" /> Çıkış Aygıtı (Kulaklık/Hoparlör)
+                    <Volume2 className="w-3.5 h-3.5 text-cyber-teal" /> {t('settings.outputDevice')}
                   </label>
                   <select
                     value={selectedOutputId}
                     onChange={(e) => onSelectOutputDevice(e.target.value)}
                     className="w-full bg-[#0d1017] border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-cyber-cyan font-mono"
                   >
-                    <option value="default">Varsayılan Sistem Hoparlörü</option>
+                    <option value="default">{t('settings.defaultDevice')}</option>
                     {outputDevices.map((d) => (
                       <option key={d.deviceId} value={d.deviceId}>
                         {d.label}
@@ -297,7 +310,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               {/* Audio Processing Toggles */}
               <div className="glass-panel p-4 rounded-2xl border border-white/5 space-y-3">
                 <h4 className="text-xs font-mono font-bold text-white uppercase">
-                  Donanım Seviyesi Akıllı Ses Filtreleme
+                  {t('settings.dspFilters')}
                 </h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
@@ -311,10 +324,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-bold font-mono">Gürültü Engelleme</span>
+                      <span className="text-xs font-bold font-mono">{t('settings.noiseSuppression')}</span>
                       {noiseSuppression ? <Check className="w-4 h-4 text-cyber-cyan" /> : null}
                     </div>
-                    <span className="text-[10px] text-cyber-textMuted">Arka plan seslerini filtreler</span>
+                    <span className="text-[10px] text-cyber-textMuted">{t('settings.noiseDesc')}</span>
                   </div>
 
                   {/* Echo Cancellation */}
@@ -327,10 +340,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-bold font-mono">Yankı İptali</span>
+                      <span className="text-xs font-bold font-mono">{t('settings.echoCancellation')}</span>
                       {echoCancellation ? <Check className="w-4 h-4 text-cyber-cyan" /> : null}
                     </div>
-                    <span className="text-[10px] text-cyber-textMuted">Hoparlör yankısını önler</span>
+                    <span className="text-[10px] text-cyber-textMuted">{t('settings.echoDesc')}</span>
                   </div>
 
                   {/* Auto Gain Control */}
@@ -343,10 +356,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-bold font-mono">Otomatik Kazanç</span>
+                      <span className="text-xs font-bold font-mono">{t('settings.autoGain')}</span>
                       {autoGainControl ? <Check className="w-4 h-4 text-cyber-cyan" /> : null}
                     </div>
-                    <span className="text-[10px] text-cyber-textMuted">Ses düzeyini dengeler</span>
+                    <span className="text-[10px] text-cyber-textMuted">{t('settings.autoGainDesc')}</span>
                   </div>
                 </div>
               </div>
@@ -358,13 +371,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     <Mic className="w-5 h-5 text-cyber-cyan" />
                     <h4 className="font-semibold text-white text-xs font-mono uppercase">
                       {voiceInputMode === 'vad'
-                        ? 'Ses Algılama (VAD) Eşiği & Mikrofon Testi'
-                        : 'Mikrofon Seviye Testi'}
+                        ? t('settings.vadSensitivity')
+                        : t('settings.liveTest')}
                     </h4>
                   </div>
                   {voiceInputMode === 'vad' && (
                     <span className="text-xs font-mono text-cyber-cyan bg-cyber-cyan/10 px-2.5 py-1 rounded-full border border-cyber-cyan/30">
-                      %{vadSensitivity} Eşik
+                      %{vadSensitivity}
                     </span>
                   )}
                 </div>
@@ -384,9 +397,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 {/* Live Mic Test Bar */}
                 <div className="space-y-1">
                   <div className="flex justify-between text-[11px] font-mono text-cyber-textMuted">
-                    <span>Canlı Mikrofon Girişi</span>
+                    <span>{t('settings.liveTest')}</span>
                     <span className={isSpeaking ? 'text-cyber-cyan font-bold animate-pulse' : ''}>
-                      {isSpeaking ? 'KONUŞUYOR (Sinyal İletiliyor)' : 'SESSİZ'}
+                      {isSpeaking ? t('settings.soundDetected') : t('settings.soundSilent')}
                     </span>
                   </div>
                   <div className="w-full h-3 bg-black/50 rounded-full overflow-hidden p-0.5 border border-white/5">
@@ -410,10 +423,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="text-sm font-bold text-white font-mono flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-cyber-cyan" /> Masaüstü Canlı Ses Katmanı (Oyuncu & Yayıncı Overlay)
+                      <Layers className="w-4 h-4 text-cyber-cyan" /> {t('settings.overlayTitle')}
                     </h4>
                     <p className="text-xs text-cyber-textMuted mt-1 leading-relaxed">
-                      Oyun oynarken veya diğer uygulamalardayken panel arka planda olsa dahi ekranda kimlerin olduğunu ve kimin konuştuğunu hafif saydam yüzen katman olarak gösterir.
+                      {t('settings.overlayDesc')}
                     </p>
                   </div>
                   <button
@@ -431,8 +444,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="border-t border-white/10 pt-3">
                   <p className="text-[11px] text-gray-400">
                     {showVoiceOverlay
-                      ? '✓ Overlay aktif: Ekranın sol üstünde kimin konuştuğu anlık neon halkayla parlar.'
-                      : 'Overlay kapalı. Açarak konuşanları mini panelde izleyebilirsiniz.'}
+                      ? `✓ ${t('settings.overlayOpen')}`
+                      : t('settings.overlayClosed')}
                   </p>
                 </div>
               </div>
@@ -442,10 +455,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="text-sm font-bold text-white font-mono flex items-center gap-2">
-                      <UserIcon className="w-4 h-4 text-cyber-purple" /> Profil Bilgilerini Düzenle
+                      <UserIcon className="w-4 h-4 text-cyber-purple" /> {t('settings.profileQuick')}
                     </h4>
                     <p className="text-xs text-cyber-textMuted mt-1">
-                      Kullanıcı adını, avatarını ve durum mesajını dilediğin zaman değiştir.
+                      {t('profile.title')}
                     </p>
                   </div>
                   <button
@@ -455,9 +468,60 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     }}
                     className="px-4 py-2 bg-gradient-to-r from-cyber-purple to-cyber-pink text-white font-mono font-bold text-xs rounded-xl shadow-lg shadow-cyber-purple/20 hover:opacity-95 transition-all shrink-0 ml-4"
                   >
-                    Profili Düzenle
+                    {t('settings.editProfile')}
                   </button>
                 </div>
+              </div>
+            </div>
+          ) : activeTab === 'language' ? (
+            /* Language Selection Tab */
+            <div className="space-y-5">
+              <div className="glass-panel p-4 rounded-2xl border border-white/5 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-cyber-cyan" />
+                  <h4 className="text-sm font-bold text-white font-mono uppercase">
+                    {t('settings.langSelectTitle')}
+                  </h4>
+                </div>
+                <p className="text-xs text-cyber-textMuted leading-relaxed">
+                  {t('settings.langSelectDesc')}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {languages.map((item) => {
+                  const isSelected = language === item.code;
+                  return (
+                    <button
+                      key={item.code}
+                      onClick={() => setLanguage(item.code)}
+                      className={`p-4 rounded-2xl border text-left transition-all flex items-center justify-between group ${
+                        isSelected
+                          ? 'bg-cyber-cyan/15 border-cyber-cyan text-white shadow-lg shadow-cyber-cyan/10'
+                          : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/[0.08] hover:border-white/20 hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{item.flag}</span>
+                        <div>
+                          <div className="text-sm font-bold font-mono text-white flex items-center gap-2">
+                            <span>{item.nativeName}</span>
+                          </div>
+                          <span className="text-[11px] text-gray-400 font-mono">
+                            {item.label}
+                          </span>
+                        </div>
+                      </div>
+                      {isSelected ? (
+                        <div className="w-6 h-6 rounded-full bg-cyber-cyan text-black flex items-center justify-center shadow-md">
+                          <Check className="w-3.5 h-3.5 stroke-[3]" />
+                        </div>
+                      ) : (
+                        <div className="w-6 h-6 rounded-full border border-white/20 group-hover:border-white/40" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ) : (
@@ -467,10 +531,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="text-sm font-bold text-white font-mono flex items-center gap-2">
-                      <Cpu className="w-4 h-4 text-emerald-400" /> Canlı Sistem Bellek Tüketimi
+                      <Cpu className="w-4 h-4 text-emerald-400" /> {t('settings.ramMonitor')}
                     </h4>
                     <p className="text-xs text-cyber-textMuted mt-1">
-                      Windows `psapi.dll` API'si ile doğrudan çekilen gerçek zamanlı RAM kullanımınız
+                      {t('settings.ramDesc')}
                     </p>
                   </div>
                   <div className="text-right font-mono">
@@ -484,10 +548,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <div className="border-t border-white/10 pt-3 flex items-center justify-between">
                   <div>
                     <span className="text-xs font-semibold text-white">
-                      Arayüzdeki RAM Göstergesini Göster / Gizle
+                      {t('settings.showRamBadge')}
                     </span>
                     <p className="text-[11px] text-gray-400">
-                      Başlık çubuğundaki ve sol paneldeki RAM etiketini kapatabilirsiniz.
+                      {t('settings.ramBadgeDesc')}
                     </p>
                   </div>
                   <button
@@ -528,13 +592,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* Footer */}
         <div className="px-6 py-3 bg-black/40 border-t border-white/10 flex justify-between items-center">
           <span className="text-[11px] font-mono text-cyber-textMuted flex items-center gap-1">
-            <Sparkles className="w-3.5 h-3.5 text-cyber-cyan" /> Ayarlar anında uygulanır
+            <Sparkles className="w-3.5 h-3.5 text-cyber-cyan" /> {t('settings.langSelectDesc')}
           </span>
           <button
             onClick={onClose}
             className="px-5 py-2 bg-cyber-cyan text-black hover:bg-opacity-90 font-bold text-xs rounded-xl transition-all shadow-lg shadow-cyber-cyan/30 font-mono"
           >
-            Kaydet ve Kapat
+            {t('profile.save')}
           </button>
         </div>
       </div>

@@ -25,6 +25,7 @@ import {
   Keyboard,
 } from 'lucide-react';
 import { VoiceInputMode } from '../types';
+import { useLanguage } from '../i18n';
 
 interface VoiceStageProps {
   inRoom: boolean;
@@ -83,6 +84,7 @@ export const VoiceStage: React.FC<VoiceStageProps> = ({
   roomNotification,
   onClearNotification,
 }) => {
+  const { t } = useLanguage();
   const allParticipants = [
     { ...currentUser, isSpeaking, isLocal: true },
     ...participants.map((p) => ({ ...p, isLocal: false })),
@@ -138,7 +140,7 @@ export const VoiceStage: React.FC<VoiceStageProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-bold text-white tracking-wide font-mono">
-                {inRoom ? `Canlı Oda #${activeRoomCode}` : 'Nexus Lobi İstasyonu'}
+                {inRoom ? `${t('left.activeRoom')} #${activeRoomCode}` : t('app.lobbyMode')}
               </h2>
               {inRoom && (
                 <span
@@ -150,10 +152,10 @@ export const VoiceStage: React.FC<VoiceStageProps> = ({
                 >
                   {isHost ? (
                     <>
-                      <Crown className="w-3 h-3" /> Host
+                      <Crown className="w-3 h-3" /> {t('app.roomHost')}
                     </>
                   ) : (
-                    'Katılımcı'
+                    t('app.participant')
                   )}
                 </span>
               )}
@@ -161,9 +163,9 @@ export const VoiceStage: React.FC<VoiceStageProps> = ({
             <p className="text-[11px] text-cyber-textMuted">
               {inRoom
                 ? screenShareInfo.isSharing
-                  ? `Ekran Yayını Aktif (${screenShareInfo.resolution.toUpperCase()} ${screenShareInfo.fps} FPS)`
+                  ? `${t('stage.streamerTitle')} (${screenShareInfo.resolution.toUpperCase()} ${screenShareInfo.fps} FPS)`
                   : 'Doğrudan Cihazdan Cihaza (P2P) / 48kHz Opus'
-                : 'Bağlantı Bekleniyor — Oda oluştur veya odaya katıl'}
+                : t('app.statusIdle')}
             </p>
           </div>
         </div>
@@ -177,7 +179,7 @@ export const VoiceStage: React.FC<VoiceStageProps> = ({
                   ? 'bg-cyber-purple text-white border-cyber-purple shadow-lg shadow-cyber-purple/40 animate-pulse'
                   : 'bg-cyber-purple/10 border-cyber-purple/30 text-cyber-purple'
               }`}
-              title="Bas-Konuş Modu (Tuşa basılı tutarak konuşun)"
+              title={t('settings.pttDesc')}
             >
               <Keyboard className="w-3.5 h-3.5" />
               <span>PTT: {pttKeyLabel} {isPttPressed ? '(Aktif)' : ''}</span>
@@ -192,7 +194,7 @@ export const VoiceStage: React.FC<VoiceStageProps> = ({
                   ? 'bg-cyber-cyan/20 border-cyber-cyan text-cyber-cyan font-bold shadow-md shadow-cyber-cyan/20'
                   : 'bg-white/5 border-white/10 text-gray-400 hover:text-white'
               }`}
-              title={showVoiceOverlay ? "Masaüstü Oyun Katmanını (Overlay) Gizle" : "Masaüstü Oyun Katmanını (Overlay) Göster"}
+              title={showVoiceOverlay ? t('overlay.close') : t('dock.overlay')}
             >
               <Layers className="w-3.5 h-3.5" />
               <span>Overlay</span>
@@ -203,10 +205,10 @@ export const VoiceStage: React.FC<VoiceStageProps> = ({
             <button
               onClick={onLeaveRoom}
               className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/40 transition-all font-bold"
-              title={isHost ? 'Odayı Kapat' : 'Odadan Ayrıl'}
+              title={isHost ? t('left.endRoom') : t('left.leaveRoom')}
             >
               <PhoneOff className="w-3.5 h-3.5" />
-              <span>{isHost ? 'Odayı Sonlandır' : 'Ayrıl'}</span>
+              <span>{isHost ? t('left.endRoom') : t('left.leaveRoom')}</span>
             </button>
           )}
 
@@ -346,11 +348,11 @@ export const VoiceStage: React.FC<VoiceStageProps> = ({
                   <div>
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-[10px] font-mono text-emerald-300 font-bold uppercase tracking-wider mb-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                      YAYININ CANLI AKTARILIYOR
+                      {t('stage.liveBadge')}
                     </span>
-                    <h3 className="text-xl font-bold font-mono text-white">Ekranını Başarıyla Paylaşıyorsun</h3>
+                    <h3 className="text-xl font-bold font-mono text-white">{t('stage.streamerTitle')}</h3>
                     <p className="text-xs text-cyber-textMuted mt-1 leading-relaxed">
-                      Sonsuz ayna döngüsünü (ekran içinde ekran) ve bilgisayarın kilitlenmesini önlemek için yayın burada duraklatıldı. Odadaki arkadaşların ekranını akıcı şekilde izliyor.
+                      {t('stage.streamerDesc')}
                     </p>
                   </div>
 
@@ -374,7 +376,7 @@ export const VoiceStage: React.FC<VoiceStageProps> = ({
                       className="px-6 py-2.5 rounded-2xl bg-red-500/20 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/40 text-xs font-mono font-bold transition-all shadow-lg shadow-red-500/20 flex items-center gap-2"
                     >
                       <PhoneOff className="w-4 h-4" />
-                      Yayını Durdur
+                      {t('stage.stopShare')}
                     </button>
                   </div>
                 </div>
@@ -397,11 +399,11 @@ export const VoiceStage: React.FC<VoiceStageProps> = ({
                 <div className="absolute top-4 left-4 right-4 flex items-center justify-between opacity-90 group-hover:opacity-100 transition-opacity pointer-events-auto">
                   <div className="flex items-center gap-2.5 bg-black/75 backdrop-blur-md px-3.5 py-1.5 rounded-2xl border border-white/10 shadow-lg">
                     <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 text-[10px] font-mono text-red-400 font-bold uppercase tracking-wider animate-pulse">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-400" /> CANLI
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-400" /> {t('stage.liveBadge')}
                     </span>
                     <span className="text-xs font-mono font-bold text-white flex items-center gap-1.5">
                       <Tv className="w-3.5 h-3.5 text-cyber-cyan" />
-                      {screenShareInfo.sharerName} Yayını
+                      {screenShareInfo.sharerName} ({t('dock.shareScreen')})
                     </span>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded-lg bg-white/5 border border-white/10 text-cyber-cyan">
                       {screenShareInfo.resolution.toUpperCase()} • {screenShareInfo.fps} FPS
@@ -413,7 +415,7 @@ export const VoiceStage: React.FC<VoiceStageProps> = ({
                     <button
                       onClick={toggleStreamAudio}
                       className="p-1.5 rounded-xl hover:bg-white/10 text-gray-300 hover:text-white transition-colors"
-                      title={isStreamAudioMuted ? 'Yayın Sesini Aç' : 'Yayın Sesini Sustur'}
+                      title={isStreamAudioMuted ? t('dock.deafenOn') : t('dock.deafenOff')}
                     >
                       {isStreamAudioMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4" />}
                     </button>

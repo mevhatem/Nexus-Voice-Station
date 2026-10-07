@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Tv, Monitor, Sparkles, Check, Volume2, ShieldAlert } from 'lucide-react';
 import { ScreenQuality, ScreenFps, ScreenShareOptions } from '../types';
+import { useLanguage } from '../i18n';
 
 interface ScreenShareModalProps {
   isOpen: boolean;
@@ -13,6 +14,7 @@ export const ScreenShareModal: React.FC<ScreenShareModalProps> = ({
   onClose,
   onStartShare,
 }) => {
+  const { t } = useLanguage();
   const [resolution, setResolution] = useState<ScreenQuality>('720p');
   const [fps, setFps] = useState<ScreenFps>(30);
   const [includeAudio, setIncludeAudio] = useState<boolean>(true);
@@ -38,8 +40,8 @@ export const ScreenShareModal: React.FC<ScreenShareModalProps> = ({
               <Tv className="w-4 h-4" />
             </div>
             <div>
-              <span>CANLI EKRAN YAYINI</span>
-              <p className="text-[10px] text-cyber-textMuted font-sans font-normal">P2P Doğrudan Akış (Düşük Kaynak Tüketimi)</p>
+              <span>{t('screen.title')}</span>
+              <p className="text-[10px] text-cyber-textMuted font-sans font-normal">P2P Opus / H.264</p>
             </div>
           </div>
           <button
@@ -55,13 +57,13 @@ export const ScreenShareModal: React.FC<ScreenShareModalProps> = ({
           {/* Resolution Options */}
           <div className="space-y-2.5">
             <label className="text-xs font-mono font-bold text-cyber-textMuted uppercase tracking-wider flex items-center gap-1.5">
-              <Monitor className="w-3.5 h-3.5 text-cyber-cyan" /> Çözünürlük Seçimi
+              <Monitor className="w-3.5 h-3.5 text-cyber-cyan" /> {t('screen.resolution')}
             </label>
             <div className="grid grid-cols-3 gap-2.5">
               {[
-                { id: '720p', label: '720p HD', desc: 'Önerilen • Ultra Hafif' },
-                { id: '1080p', label: '1080p FHD', desc: 'Kristal Netlik (Güçlü PC)' },
-                { id: 'source', label: 'Kaynak', desc: 'Tam Monitör Boyutu' },
+                { id: '720p', label: '720p HD', desc: t('screen.res720') },
+                { id: '1080p', label: '1080p FHD', desc: t('screen.res1080') },
+                { id: 'source', label: t('screen.resSource'), desc: t('screen.resSource') },
               ].map((res) => (
                 <button
                   key={res.id}
@@ -85,12 +87,12 @@ export const ScreenShareModal: React.FC<ScreenShareModalProps> = ({
           {/* FPS Options */}
           <div className="space-y-2.5">
             <label className="text-xs font-mono font-bold text-cyber-textMuted uppercase tracking-wider flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-cyber-purple" /> Kare Hızı (FPS)
+              <Sparkles className="w-3.5 h-3.5 text-cyber-purple" /> {t('screen.fps')}
             </label>
             <div className="grid grid-cols-2 gap-3">
               {[
-                { fps: 30, label: '30 FPS', desc: 'Önerilen • Donma / Kilitlenme Yapmaz' },
-                { fps: 60, label: '60 FPS', desc: 'Yüksek Akıcılık (Harici GPU Gerekir)' },
+                { fps: 30, label: '30 FPS', desc: t('screen.fps30') },
+                { fps: 60, label: '60 FPS', desc: t('screen.fps60') },
               ].map((item) => (
                 <button
                   key={item.fps}
@@ -111,35 +113,10 @@ export const ScreenShareModal: React.FC<ScreenShareModalProps> = ({
             </div>
           </div>
 
-          {/* Audio capture checkbox */}
-          <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-emerald-400/10 flex items-center justify-center text-emerald-400">
-                <Volume2 className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-xs font-mono font-bold text-white">Sistem & Oyun Sesini Aktar</p>
-                <p className="text-[10px] text-gray-500">Arkadaşın oyunu veya izlediğin videoyu duyabilsin</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setIncludeAudio(!includeAudio)}
-              className={`w-11 h-6 rounded-full transition-colors relative p-1 ${
-                includeAudio ? 'bg-cyber-cyan' : 'bg-white/10'
-              }`}
-            >
-              <div
-                className={`w-4 h-4 rounded-full bg-black transition-transform ${
-                  includeAudio ? 'translate-x-5' : 'translate-x-0'
-                }`}
-              />
-            </button>
-          </div>
-
-          {/* Note info */}
+          {/* Low CPU Note info */}
           <div className="flex items-center gap-2 text-[11px] text-gray-400 bg-black/40 p-3 rounded-xl border border-white/5 font-mono">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-            <span>P2P doğrudan bağlantı sayesinde sunucusuz ve minimum gecikmeyle aktarılır.</span>
+            <span>{t('screen.lowCpuDesc')}</span>
           </div>
         </div>
 
@@ -149,14 +126,14 @@ export const ScreenShareModal: React.FC<ScreenShareModalProps> = ({
             onClick={onClose}
             className="px-4 py-2 rounded-xl text-xs font-mono text-gray-400 hover:text-white hover:bg-white/5 transition-all"
           >
-            Vazgeç
+            {t('screen.cancel')}
           </button>
           <button
             onClick={handleStart}
             className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyber-cyan to-cyber-teal text-black font-mono font-extrabold text-xs shadow-lg shadow-cyber-cyan/25 hover:opacity-95 transition-all flex items-center gap-2"
           >
             <Tv className="w-4 h-4 stroke-[2.5]" />
-            Yayını Başlat
+            {t('screen.start')}
           </button>
         </div>
       </div>

@@ -18,6 +18,7 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
+import { useLanguage } from '../i18n';
 
 interface LeftPanelProps {
   inRoom: boolean;
@@ -52,6 +53,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
   showRamBadge = true,
   realRamUsageMb = 35.2,
 }) => {
+  const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
   const [inputCode, setInputCode] = useState('');
   const [volumeMenuPeerId, setVolumeMenuPeerId] = useState<string | null>(null);
@@ -84,7 +86,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                 NEXUS<span className="text-cyber-cyan">VOICE</span>
               </h1>
               <p className="text-[10px] text-cyber-textMuted font-mono">
-                {inRoom ? (isHost ? 'Oda Yöneticisi' : 'Katılımcı') : 'Lobi Modu'}
+                {inRoom ? (isHost ? t('app.roomHost') : t('app.participant')) : t('app.lobbyMode')}
               </p>
             </div>
           </div>
@@ -109,31 +111,31 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
             <div className="glass-panel p-4 rounded-2xl border border-cyber-cyan/30 bg-cyber-cyan/5 space-y-3">
               <div className="flex items-center gap-2">
                 <Crown className="w-4 h-4 text-cyber-cyan" />
-                <h3 className="text-xs font-mono font-bold text-white uppercase">Yeni Oda Başlat</h3>
+                <h3 className="text-xs font-mono font-bold text-white uppercase">{t('left.createRoom')}</h3>
               </div>
               <p className="text-[11px] text-gray-400 leading-relaxed">
-                Sen oda sahibi (Host) olursun. Katılımcıları susturabilir veya odadan çıkarabilirsin.
+                {t('left.shareHint')}
               </p>
               <button
                 onClick={onCreateRoom}
                 className="w-full py-2.5 px-3 bg-gradient-to-r from-cyber-cyan to-cyber-teal text-black font-mono font-bold text-xs rounded-xl shadow-lg shadow-cyber-cyan/20 hover:opacity-95 transition-all flex items-center justify-center gap-2"
               >
                 <PlusCircle className="w-4 h-4" />
-                Oda Oluştur
+                {t('left.createRoom')}
               </button>
             </div>
 
             {/* Join Room Form */}
             <form onSubmit={handleJoin} className="glass-panel p-4 rounded-2xl border border-white/10 space-y-3">
               <label className="text-xs font-mono font-bold text-cyber-textMuted uppercase flex items-center gap-1.5">
-                <UserPlus className="w-3.5 h-3.5 text-cyber-teal" /> Arkadaşın Odasına Katıl
+                <UserPlus className="w-3.5 h-3.5 text-cyber-teal" /> {t('left.joinRoom')}
               </label>
               <div className="glass-panel p-1.5 rounded-xl flex items-center gap-2 border border-white/10 focus-within:border-cyber-cyan">
                 <input
                   type="text"
                   value={inputCode}
                   onChange={(e) => setInputCode(e.target.value)}
-                  placeholder="Oda Kodu Gir (Örn: 4819)"
+                  placeholder={t('left.enterCodePlaceholder')}
                   className="bg-transparent flex-1 text-xs text-white placeholder-gray-500 outline-none px-2 font-mono"
                 />
                 <button
@@ -141,11 +143,11 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                   disabled={!inputCode.trim()}
                   className="px-3 py-1.5 bg-cyber-cyan text-black font-mono font-bold text-xs rounded-lg hover:bg-opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-                  Katıl
+                  {t('left.join')}
                 </button>
               </div>
               <p className="text-[10px] text-gray-500">
-                Arkadaşının verdiği 4 haneli kodu yazarak anında odasına bağlan.
+                {t('left.shareHint')}
               </p>
             </form>
           </div>
@@ -158,16 +160,16 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                 <span className="text-[11px] font-mono text-cyber-cyan uppercase flex items-center gap-1.5 font-bold">
                   {isHost ? (
                     <>
-                      <Crown className="w-3.5 h-3.5 text-amber-400" /> Oda Kodu (Host)
+                      <Crown className="w-3.5 h-3.5 text-amber-400" /> {t('left.activeRoom')} ({t('app.roomHost')})
                     </>
                   ) : (
                     <>
-                      <Radio className="w-3.5 h-3.5 text-cyber-teal" /> Oda Kodu
+                      <Radio className="w-3.5 h-3.5 text-cyber-teal" /> {t('left.activeRoom')}
                     </>
                   )}
                 </span>
                 <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Canlı
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> {t('stage.liveBadge')}
                 </span>
               </div>
 
@@ -178,7 +180,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                 <button
                   onClick={handleCopyCode}
                   className="p-1.5 rounded-lg bg-white/5 hover:bg-cyber-cyan hover:text-black transition-all text-gray-300"
-                  title="Kodu Kopyala"
+                  title={t('left.copyCode')}
                 >
                   {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                 </button>
@@ -186,8 +188,8 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
 
               <p className="text-[10px] text-cyber-textMuted leading-relaxed">
                 {isHost
-                  ? 'Arkadaşına bu kodu ver. Odaya katıldığında otomatik bağlanacaktır.'
-                  : 'Bu odadasın. İstediğin an odadan ayrılabilirsin.'}
+                  ? t('left.shareHint')
+                  : t('stage.viewerTitle')}
               </p>
             </div>
 
@@ -195,17 +197,17 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
             <div className="space-y-2">
               <div className="flex items-center justify-between text-[11px] font-mono tracking-wider text-cyber-textMuted uppercase px-1">
                 <span className="flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5 text-cyber-teal" /> Odadakiler
+                  <Users className="w-3.5 h-3.5 text-cyber-teal" /> {t('left.participants')}
                 </span>
-                <span>{connectedFriends.length} Kişi</span>
+                <span>{connectedFriends.length} {t('left.online')}</span>
               </div>
 
               <div className="space-y-1.5 max-h-[220px] overflow-y-auto pr-1">
                 {connectedFriends.length === 0 ? (
                   <div className="text-center py-5 px-2 border border-dashed border-white/10 rounded-2xl space-y-1">
                     <Users className="w-5 h-5 mx-auto text-gray-600" />
-                    <p className="text-[11px] text-gray-400">Henüz başka kimse yok</p>
-                    <p className="text-[10px] text-gray-500">Arkadaşın #{activeRoomCode} ile katılabilir</p>
+                    <p className="text-[11px] text-gray-400">{t('stage.emptyTitle')}</p>
+                    <p className="text-[10px] text-gray-500">#{activeRoomCode}</p>
                   </div>
                 ) : (
                   connectedFriends.map((friend) => (
@@ -237,11 +239,11 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                           ) : (
                             <span className="text-[9px] text-gray-400 font-mono">
                               {friend.isMutedByHost ? (
-                                <span className="text-amber-400">Susturuldu</span>
+                                <span className="text-amber-400">{t('left.muted')}</span>
                               ) : friend.isSpeaking ? (
-                                <span className="text-cyber-cyan">Konuşuyor</span>
+                                <span className="text-cyber-cyan">{t('left.speaking')}</span>
                               ) : (
-                                'Bağlı'
+                                t('left.online')
                               )}
                             </span>
                           )}
@@ -260,7 +262,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                               ? 'bg-cyber-cyan/20 text-cyber-cyan border-cyber-cyan/40 font-bold'
                               : 'hover:bg-white/10 text-gray-400 hover:text-white border-transparent'
                           }`}
-                          title={`Ses Düzeyi: %${friend.volume ?? 100}`}
+                          title={`${t('left.userVolume')}: %${friend.volume ?? 100}`}
                         >
                           {friend.isLocallyMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
                         </button>
@@ -273,10 +275,10 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                           >
                             <div className="flex items-center justify-between text-[10px] font-mono text-gray-300">
                               <span className="font-bold flex items-center gap-1">
-                                <Volume2 className="w-3 h-3 text-cyber-cyan" /> Ses Düzeyi
+                                <Volume2 className="w-3 h-3 text-cyber-cyan" /> {t('left.userVolume')}
                               </span>
                               <span className="text-cyber-cyan font-bold">
-                                {friend.isLocallyMuted ? 'Sessiz' : `%${friend.volume ?? 100}`}
+                                {friend.isLocallyMuted ? t('left.muted') : `%${friend.volume ?? 100}`}
                               </span>
                             </div>
 
@@ -305,9 +307,9 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                                   friend.isLocallyMuted
                                     ? 'bg-red-500/20 text-red-400'
                                     : 'bg-white/5 text-gray-300 hover:text-red-400'
-                                }`}
+                               }`}
                               >
-                                {friend.isLocallyMuted ? 'Aç' : 'Sustur'}
+                                {friend.isLocallyMuted ? t('left.unmuteForMe') : t('left.muteForMe')}
                               </button>
                             </div>
                           </div>
@@ -323,14 +325,14 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                                   ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
                                   : 'hover:bg-white/10 text-gray-400 hover:text-white border-transparent'
                               }`}
-                              title={friend.isMutedByHost ? 'Susturmayı Kaldır' : 'Oda Genelinde Sustur'}
+                              title={friend.isMutedByHost ? t('left.unmuteForMe') : t('left.remoteMute')}
                             >
                               {friend.isMutedByHost ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
                             </button>
                             <button
                               onClick={() => onKickPeer(friend.id)}
                               className="p-1.5 rounded-lg hover:bg-red-500/20 text-gray-400 hover:text-red-400 border border-transparent hover:border-red-500/30 transition-colors"
-                              title="Odadan Çıkar (Kick)"
+                              title={t('left.kick')}
                             >
                               <UserX className="w-3.5 h-3.5" />
                             </button>
@@ -350,7 +352,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                 className="w-full py-2 px-3 rounded-xl bg-red-500/15 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/30 font-mono text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-lg shadow-red-500/10"
               >
                 <PhoneOff className="w-3.5 h-3.5" />
-                {isHost ? 'Odayı Sonlandır (Kapat)' : 'Odadan Ayrıl'}
+                {isHost ? t('left.endRoom') : t('left.leaveRoom')}
               </button>
             </div>
           </div>

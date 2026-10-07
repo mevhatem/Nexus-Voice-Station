@@ -18,10 +18,12 @@ import {
   sendOverlayCommand,
   getCachedOverlayState,
 } from '../utils/overlayChannel';
+import { useLanguage } from '../i18n';
 
 const OPACITY_PRESETS = [0.35, 0.5, 0.75, 0.95];
 
 export const DesktopOverlayWindow: React.FC = () => {
+  const { t } = useLanguage();
   const [syncState, setSyncState] = useState<OverlaySyncPayload | null>(() => getCachedOverlayState());
   const [onlySpeaking, setOnlySpeaking] = useState<boolean>(() => {
     return localStorage.getItem('nexus_overlay_only_speaking') === 'true';
@@ -145,7 +147,7 @@ export const DesktopOverlayWindow: React.FC = () => {
             <button
               onClick={handleCycleOpacity}
               className="p-1 rounded text-gray-400 hover:text-white hover:bg-white/10 transition-colors text-[10px] font-mono flex items-center gap-0.5"
-              title={`Şeffaflık: %${Math.round(currentOpacity * 100)} (Değiştirmek için tıkla)`}
+              title={t('overlay.opacityTooltip', { val: Math.round(currentOpacity * 100).toString() })}
             >
               <Sun className="w-3 h-3" />
               <span className="text-[9px]">%{(currentOpacity * 100).toFixed(0)}</span>
@@ -157,7 +159,7 @@ export const DesktopOverlayWindow: React.FC = () => {
               className={`p-1 rounded transition-colors ${
                 onlySpeaking ? 'text-cyber-cyan bg-cyber-cyan/15' : 'text-gray-400 hover:text-white hover:bg-white/10'
               }`}
-              title={onlySpeaking ? 'Tüm üyeleri göster' : 'Sadece konuşanları göster'}
+              title={onlySpeaking ? t('overlay.allMembers') : t('overlay.speakingOnly')}
             >
               {onlySpeaking ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
             </button>
@@ -170,7 +172,7 @@ export const DesktopOverlayWindow: React.FC = () => {
                   ? 'text-red-400 bg-red-500/20'
                   : 'text-gray-400 hover:text-white hover:bg-white/10'
               }`}
-              title={currentUser?.isMuted ? 'Mikrofonu Aç' : 'Mikrofonu Sustur'}
+              title={currentUser?.isMuted ? t('dock.micOn') : t('dock.micOff')}
             >
               {currentUser?.isMuted ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
             </button>
@@ -179,7 +181,7 @@ export const DesktopOverlayWindow: React.FC = () => {
             <button
               onClick={handleClose}
               className="p-1 rounded text-gray-400 hover:text-white hover:bg-red-500/20 hover:text-red-300 transition-colors"
-              title="Katmanı Gizle"
+              title={t('overlay.close')}
             >
               <X className="w-3 h-3" />
             </button>
@@ -190,11 +192,11 @@ export const DesktopOverlayWindow: React.FC = () => {
         <div className="p-2 flex flex-col gap-1.5 overflow-y-auto max-h-[300px]">
           {!inRoom ? (
             <div className="py-4 text-center text-xs text-gray-400 font-mono">
-              Odaya bağlı değil
+              {t('overlay.notConnected')}
             </div>
           ) : displayedMembers.length === 0 ? (
             <div className="py-3 text-center text-xs text-gray-500 font-mono">
-              Kimse konuşmuyor
+              {t('overlay.noOneSpeaking')}
             </div>
           ) : (
             displayedMembers.map((member) => {
@@ -234,7 +236,7 @@ export const DesktopOverlayWindow: React.FC = () => {
                           speaking ? 'text-white font-bold' : 'text-gray-300'
                         }`}
                       >
-                        {member.name} {member.isLocal && '(Sen)'}
+                        {member.name} {member.isLocal && ` ${t('left.you')}`}
                       </span>
                       {member.customStatus && (
                         <span className="text-[9px] text-gray-400 truncate leading-none">

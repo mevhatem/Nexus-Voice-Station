@@ -1,6 +1,7 @@
 import React from 'react';
 import { Friend, VoiceInputMode } from '../types';
 import { Mic, MicOff, Headphones, Settings, MessageSquare, PhoneOff, Radio, Tv, Edit3, Layers, Keyboard } from 'lucide-react';
+import { useLanguage } from '../i18n';
 
 interface FloatingControlDockProps {
   currentUser: Friend;
@@ -47,6 +48,7 @@ export const FloatingControlDock: React.FC<FloatingControlDockProps> = ({
   onOpenScreenShare,
   onLeaveVoice,
 }) => {
+  const { t } = useLanguage();
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 select-none">
       <div className="glass-pill px-4 py-2.5 rounded-full flex items-center gap-4 transition-all duration-300 hover:border-cyber-cyan/40 shadow-2xl">
@@ -54,7 +56,7 @@ export const FloatingControlDock: React.FC<FloatingControlDockProps> = ({
         <div
           onClick={onOpenProfileModal}
           className="flex items-center gap-3 border-r border-white/10 pr-3 cursor-pointer group hover:opacity-95 transition-opacity"
-          title="Profilini Düzenlemek İçin Tıkla"
+          title={t('profile.title')}
         >
           <div className="relative">
             <img
@@ -88,11 +90,11 @@ export const FloatingControlDock: React.FC<FloatingControlDockProps> = ({
                   }`}
                 >
                   <Keyboard className="w-2.5 h-2.5" />
-                  {isPttPressed ? 'PTT Konuşuyor' : `PTT [${pttKeyLabel}]`}
+                  {isPttPressed ? `PTT ${t('left.speaking')}` : `PTT [${pttKeyLabel}]`}
                 </span>
               ) : isSpeaking && !isMuted ? (
                 <span className="text-[10px] text-cyber-cyan font-mono flex items-center gap-1 animate-pulse">
-                  <Radio className="w-3 h-3" /> Konuşuyor
+                  <Radio className="w-3 h-3" /> {t('left.speaking')}
                 </span>
               ) : (
                 <div className="flex items-center gap-1">
@@ -119,7 +121,7 @@ export const FloatingControlDock: React.FC<FloatingControlDockProps> = ({
                 ? 'bg-red-500/20 text-red-400 border border-red-500/40'
                 : 'hover:bg-white/10 text-gray-300 hover:text-white'
             }`}
-            title={isMuted ? 'Mikrofonu Aç' : 'Mikrofonu Kapat'}
+            title={isMuted ? t('dock.micOn') : t('dock.micOff')}
           >
             {isMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
           </button>
@@ -132,7 +134,7 @@ export const FloatingControlDock: React.FC<FloatingControlDockProps> = ({
                 ? 'bg-red-500/20 text-red-400 border border-red-500/40'
                 : 'hover:bg-white/10 text-gray-300 hover:text-white'
             }`}
-            title={isDeafened ? 'Kulaklığı Aç' : 'Kulaklığı Sustur'}
+            title={isDeafened ? t('dock.deafenOn') : t('dock.deafenOff')}
           >
             <Headphones className="w-4 h-4" />
           </button>
@@ -145,7 +147,7 @@ export const FloatingControlDock: React.FC<FloatingControlDockProps> = ({
                 ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/40 ring-2 ring-emerald-400'
                 : 'hover:bg-white/10 text-gray-300 hover:text-white'
             }`}
-            title={isScreenSharing ? 'Ekran Paylaşımını Durdur' : 'Ekranını Paylaş (720p/1080p, 30/60 FPS)'}
+            title={isScreenSharing ? t('dock.stopShare') : t('dock.shareScreen')}
           >
             <Tv className="w-4 h-4" />
             {isScreenSharing && (
@@ -162,7 +164,7 @@ export const FloatingControlDock: React.FC<FloatingControlDockProps> = ({
                   ? 'bg-cyber-cyan/20 text-cyber-cyan border border-cyber-cyan/40 shadow-lg shadow-cyber-cyan/20'
                   : 'hover:bg-white/10 text-gray-300 hover:text-white'
               }`}
-              title={showVoiceOverlay ? "Masaüstü Oyun Katmanını (Overlay) Gizle" : "Masaüstü Oyun Katmanını (Overlay) Göster"}
+              title={showVoiceOverlay ? t('overlay.close') : t('dock.overlay')}
             >
               <Layers className="w-4 h-4" />
             </button>
@@ -172,7 +174,7 @@ export const FloatingControlDock: React.FC<FloatingControlDockProps> = ({
           <button
             onClick={onOpenSettings}
             className="p-2.5 rounded-full hover:bg-white/10 text-gray-300 hover:text-white transition-all duration-200"
-            title="Ayarlar (Ses, Bas-Konuş & Profil)"
+            title={t('dock.settings')}
           >
             <Settings className="w-4 h-4" />
           </button>
@@ -185,7 +187,7 @@ export const FloatingControlDock: React.FC<FloatingControlDockProps> = ({
                 ? 'bg-cyber-cyan text-black shadow-lg shadow-cyber-cyan/30'
                 : 'hover:bg-white/10 text-gray-300 hover:text-white'
             }`}
-            title="Mini Sohbet Panelini Aç/Kapat"
+            title={t('dock.chat')}
           >
             <MessageSquare className="w-4 h-4" />
             {hasUnreadMessages && !isChatOpen && (
@@ -198,7 +200,7 @@ export const FloatingControlDock: React.FC<FloatingControlDockProps> = ({
             <button
               onClick={onLeaveVoice}
               className="p-2.5 rounded-full bg-red-500/20 text-red-400 hover:bg-red-500 hover:text-white transition-all duration-200 border border-red-500/30"
-              title="Sesten Ayrıl"
+              title={t('dock.leave')}
             >
               <PhoneOff className="w-4 h-4" />
             </button>
