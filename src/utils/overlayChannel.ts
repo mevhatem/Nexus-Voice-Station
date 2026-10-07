@@ -39,17 +39,25 @@ export function getOverlayChannel(): BroadcastChannel {
   return channelInstance;
 }
 
-export function broadcastOverlayState(payload: OverlaySyncPayload) {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
-  } catch {}
+let diskSaveTimeout: ReturnType<typeof setTimeout> | null = null;
 
+export function broadcastOverlayState(payload: OverlaySyncPayload) {
+  // Ultra-fast zero-latency in-memory message to overlay window
   try {
     const ch = getOverlayChannel();
     ch.postMessage({ type: 'SYNC_STATE', payload });
   } catch (err) {
     console.warn('Failed to broadcast overlay state:', err);
   }
+
+  // Debounce synchronous disk/localStorage writes to at most once every 500ms
+  // to avoid blocking the main UI thread during audio/state changes.
+  if (diskSaveTimeout) clearTimeout(diskSaveTimeout);
+  diskSaveTimeout = setTimeout(() => {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+    } catch {}
+  }, 500);
 }
 
 export function sendOverlayCommand(cmd: OverlayCommandMessage) {

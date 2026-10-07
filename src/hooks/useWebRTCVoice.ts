@@ -111,6 +111,7 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
   const audioContextRef = useRef<AudioContext | null>(null);
   const localAnalyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
+  const friendVadFramesRef = useRef<Map<string, number>>(new Map());
 
   // Enumerate devices
   const refreshDevices = useCallback(async () => {
@@ -336,6 +337,10 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
 
+      let lastLevel = 0;
+      let lastSpeaking = false;
+      let lastLevelUpdate = 0;
+
       const checkVoice = () => {
         if (localAnalyserRef.current && !isMuted) {
           localAnalyserRef.current.getByteFrequencyData(dataArray);
@@ -345,16 +350,32 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
           }
           const avg = sum / dataArray.length;
           const level = Math.min(100, Math.round((avg / 128) * 100));
-          setAudioLevel(level);
 
-          if (voiceInputModeRef.current === 'ptt') {
-            setIsSpeaking(isPttPressedRef.current && level > 5);
-          } else {
-            setIsSpeaking(level > vadThreshold);
+          const now = performance.now();
+          // Throttle audio level updates to 80ms or significant change (>8%) to avoid render thrashing
+          if (now - lastLevelUpdate > 80 || Math.abs(level - lastLevel) > 8) {
+            setAudioLevel(level);
+            lastLevel = level;
+            lastLevelUpdate = now;
+          }
+
+          const speaking = voiceInputModeRef.current === 'ptt'
+            ? (isPttPressedRef.current && level > 5)
+            : (level > vadThreshold);
+
+          if (speaking !== lastSpeaking) {
+            setIsSpeaking(speaking);
+            lastSpeaking = speaking;
           }
         } else {
-          setAudioLevel(0);
-          setIsSpeaking(false);
+          if (lastLevel !== 0) {
+            setAudioLevel(0);
+            lastLevel = 0;
+          }
+          if (lastSpeaking !== false) {
+            setIsSpeaking(false);
+            lastSpeaking = false;
+          }
         }
         animationFrameRef.current = requestAnimationFrame(checkVoice);
       };
@@ -367,6 +388,25 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
       return null;
     }
   }, [selectedInputId, echoCancellation, noiseSuppression, autoGainControl, vadThreshold, isMuted, refreshDevices]);
+
+  // Clean up resources for a specific peer
+  const cleanupPeer = useCallback((peerId: string) => {
+    const frameId = friendVadFramesRef.current.get(peerId);
+    if (frameId !== undefined) {
+      cancelAnimationFrame(frameId);
+      friendVadFramesRef.current.delete(peerId);
+    }
+    gainNodesRef.current.delete(peerId);
+    const audio = remoteAudioElementsRef.current.get(peerId);
+    if (audio) {
+      audio.srcObject = null;
+      remoteAudioElementsRef.current.delete(peerId);
+    }
+    callsRef.current.delete(peerId);
+    dataConnsRef.current.delete(peerId);
+    screenCallsRef.current.delete(peerId);
+    setConnectedPeers((prev) => prev.filter((p) => p.id !== peerId));
+  }, []);
 
   // Handle incoming remote audio stream
   const handleIncomingStream = (peerId: string, remoteStream: MediaStream) => {
@@ -401,18 +441,32 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
         gainNodesRef.current.set(peerId, gainNode);
 
         const dataArr = new Uint8Array(friendAnalyser.frequencyBinCount);
+        let friendLastSpeaking = false;
+
+        // Cancel previous animation frame if one was already running for this peer
+        const oldFrame = friendVadFramesRef.current.get(peerId);
+        if (oldFrame !== undefined) {
+          cancelAnimationFrame(oldFrame);
+        }
+
         const pollFriendVad = () => {
           friendAnalyser.getByteFrequencyData(dataArr);
           let sum = 0;
           for (let i = 0; i < dataArr.length; i++) sum += dataArr[i];
           const speaking = (sum / dataArr.length) > 20;
 
-          setConnectedPeers((prev) =>
-            prev.map((p) => (p.id === peerId ? { ...p, isSpeaking: speaking } : p))
-          );
-          requestAnimationFrame(pollFriendVad);
+          // Only dispatch React state update on state transition (talking -> silent or silent -> talking)
+          if (speaking !== friendLastSpeaking) {
+            friendLastSpeaking = speaking;
+            setConnectedPeers((prev) =>
+              prev.map((p) => (p.id === peerId ? { ...p, isSpeaking: speaking } : p))
+            );
+          }
+          const frameId = requestAnimationFrame(pollFriendVad);
+          friendVadFramesRef.current.set(peerId, frameId);
         };
-        pollFriendVad();
+        const frameId = requestAnimationFrame(pollFriendVad);
+        friendVadFramesRef.current.set(peerId, frameId);
       } catch (e) {
         console.warn("Friend VAD monitor error:", e);
       }
@@ -452,6 +506,15 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
       fps: 60,
       stream: null,
     });
+
+    // Stop friend VAD monitors and cleanup audio elements
+    friendVadFramesRef.current.forEach((frameId) => cancelAnimationFrame(frameId));
+    friendVadFramesRef.current.clear();
+    gainNodesRef.current.clear();
+    remoteAudioElementsRef.current.forEach((audio) => {
+      audio.srcObject = null;
+    });
+    remoteAudioElementsRef.current.clear();
 
     // Close all voice calls
     callsRef.current.forEach((call) => call.close());
@@ -536,10 +599,7 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
         setIsMuted(true);
         setRoomNotification('Oda yöneticisi mikrofonunuzu kapattı.');
       } else if (payload.type === 'user_left') {
-        setConnectedPeers((prev) => prev.filter((p) => p.id !== conn.peer));
-        callsRef.current.delete(conn.peer);
-        dataConnsRef.current.delete(conn.peer);
-        screenCallsRef.current.delete(conn.peer);
+        cleanupPeer(conn.peer);
       } else if (payload.type === 'screen_share_stopped') {
         setScreenShareInfo({
           isSharing: false,
@@ -557,10 +617,7 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
     });
 
     conn.on('close', () => {
-      setConnectedPeers((prev) => prev.filter((p) => p.id !== conn.peer));
-      callsRef.current.delete(conn.peer);
-      dataConnsRef.current.delete(conn.peer);
-      screenCallsRef.current.delete(conn.peer);
+      cleanupPeer(conn.peer);
       setScreenShareInfo((prev) => {
         if (prev.sharerId === conn.peer) {
           return {
@@ -575,7 +632,7 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
         return prev;
       });
     });
-  }, [currentUser, isHost, leaveOrEndRoom, onReceiveMessage, screenShareInfo.fps, screenShareInfo.resolution]);
+  }, [cleanupPeer, currentUser, isHost, leaveOrEndRoom, onReceiveMessage, screenShareInfo.fps, screenShareInfo.resolution]);
 
   // Attach generic peer listeners
   const attachPeerListeners = useCallback((peer: Peer) => {
@@ -724,16 +781,12 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
     }
     const call = callsRef.current.get(peerId);
     if (call) call.close();
-    callsRef.current.delete(peerId);
 
     const screenCall = screenCallsRef.current.get(peerId);
     if (screenCall) screenCall.close();
-    screenCallsRef.current.delete(peerId);
 
     if (conn) conn.close();
-    dataConnsRef.current.delete(peerId);
-
-    setConnectedPeers((prev) => prev.filter((p) => p.id !== peerId));
+    cleanupPeer(peerId);
   };
 
   // Host: Remote mute a participant
@@ -752,6 +805,13 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
   useEffect(() => {
     return () => {
       if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
+      friendVadFramesRef.current.forEach((frameId) => cancelAnimationFrame(frameId));
+      friendVadFramesRef.current.clear();
+      gainNodesRef.current.clear();
+      remoteAudioElementsRef.current.forEach((audio) => {
+        audio.srcObject = null;
+      });
+      remoteAudioElementsRef.current.clear();
       if (peerRef.current) peerRef.current.destroy();
       if (localStreamRef.current) {
         localStreamRef.current.getTracks().forEach((t) => t.stop());
