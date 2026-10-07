@@ -1,0 +1,2 @@
+Set WshShell = CreateObject("WScript.Shell")
+WshShell.Run "powershell -ExecutionPolicy Bypass -WindowStyle Hidden -Command ""$env:CARGO_TARGET_DIR='C:\Users\ebulm\.cargo\target-tauri-chat'; $env:Path='$env:USERPROFILE\.cargo\bin;C:\Users\ebulm\AppData\Local\Microsoft\WinGet\Packages\BrechtSanders.WinLibs.POSIX.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe\mingw64\bin;' + $env:Path; Set-Location 'c:\Users\ebulm\OneDrive\Desktop\ram tüketmeyen alternatif discord\tauri-chat'; npm run tauri dev""", 0, false

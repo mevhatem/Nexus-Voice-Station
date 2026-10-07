@@ -1,0 +1,50 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-config-schema/schema.json",
+  "productName": "TauriChat",
+  "version": "0.1.0",
+  "identifier": "com.taurichat.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Nexus Voice Station",
+        "url": "index.html",
+        "width": 1200,
+        "height": 780,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "center": true
+      },
+      {
+        "label": "overlay",
+        "title": "Nexus Canlı Ses Katmanı",
+        "url": "index.html?overlay=1",
+        "width": 240,
+        "height": 380,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "visible": false,
+        "shadow": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": false,
+    "targets": "all",
+    "icon": []
+  }
+}
