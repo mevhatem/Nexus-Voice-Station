@@ -8,12 +8,14 @@
 *Built with Tauri v2, Rust, React 18, TypeScript & Tailwind CSS.*
 
 [![Latest Release](https://img.shields.io/github/v/release/mevhatem/Nexus-Voice-Station?color=cyan&label=Latest%20Release)](https://github.com/mevhatem/Nexus-Voice-Station/releases)
+[![CI](https://github.com/mevhatem/Nexus-Voice-Station/actions/workflows/ci.yml/badge.svg)](https://github.com/mevhatem/Nexus-Voice-Station/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white)](https://github.com/mevhatem/Nexus-Voice-Station/releases)
 [![Memory Footprint](https://img.shields.io/badge/RAM%20Footprint-~38%20MB-emerald.svg)](#)
 [![Languages](https://img.shields.io/badge/Languages-EN%20%7C%20TR%20%7C%20DE%20%7C%20FR%20%7C%20RU-orange.svg)](#)
+[![GitHub Stars](https://img.shields.io/github/stars/mevhatem/Nexus-Voice-Station?style=social)](https://github.com/mevhatem/Nexus-Voice-Station/stargazers)
 
-[📥 Download Portable](#-download--quick-start-no-installation-required) • [✨ Features](#-key-features) • [⚡ Performance Comparison](#-nexus-vs-traditional-voip) • [🛠️ Tech Stack](#️-tech-stack) • [🚀 Developer Guide](#-developer-guide)
+[📥 Download Portable](#-download--quick-start-no-installation-required) • [✨ Features](#-key-features) • [⚡ Performance Comparison](#-nexus-vs-traditional-voip) • [🛠️ Tech Stack](#️-tech-stack) • [🚀 Developer Guide](#-developer-guide) • [🤝 Contributing](#-community--contributing)
 
 </div>
 
@@ -135,7 +137,25 @@ The resulting standalone executable will be generated at `src-tauri/target/relea
 Nexus Voice Station is built from the ground up on the principle of minimal trust:
 - **No Account Required:** No emails, passwords, phone numbers, or third-party OAuth logins.
 - **Direct P2P Connections:** Audio and chat data pass directly between users' machines.
-- **Zero Telemetry:** Nexus does not collect or track user analytics, keystrokes, or habits.
+---
+
+## 🤝 Community & Contributing
+
+Contributions make the open-source community an incredible place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+- 📖 **Contributing Guidelines:** Please read our [CONTRIBUTING.md](CONTRIBUTING.md) before submitting pull requests.
+- 🛡️ **Code of Conduct:** Review our community standards in [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
+- 🔒 **Security Policy:** Learn how to report vulnerabilities responsibly in [SECURITY.md](SECURITY.md).
+- 🐛 **Report a Bug:** Open an issue with our [Bug Report Template](https://github.com/mevhatem/Nexus-Voice-Station/issues/new?template=bug_report.md).
+- 💡 **Request a Feature:** Submit an idea via our [Feature Request Template](https://github.com/mevhatem/Nexus-Voice-Station/issues/new?template=feature_request.md).
+
+---
+
+## ⭐ Star History
+
+If you love the mission of lightweight, private, and high-performance software, please consider giving Nexus Voice Station a **Star**! It helps the project reach more gamers and developers.
+
+[![Star History Chart](https://api.star-history.com/svg?repos=mevhatem/Nexus-Voice-Station&type=Date)](https://star-history.com/#mevhatem/Nexus-Voice-Station&Date)
 
 ---
 
