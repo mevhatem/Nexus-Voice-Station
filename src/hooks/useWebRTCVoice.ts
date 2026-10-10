@@ -21,6 +21,25 @@ export interface AudioDevice {
   label: string;
 }
 
+// Global high-speed STUN servers for robust NAT / CGNAT traversal across all ISPs
+const PEER_ICE_CONFIG = {
+  debug: 1,
+  config: {
+    iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' },
+      { urls: 'stun:stun2.l.google.com:19302' },
+      { urls: 'stun:stun3.l.google.com:19302' },
+      { urls: 'stun:stun4.l.google.com:19302' },
+      { urls: 'stun:stun.cloudflare.com:3478' },
+      { urls: 'stun:global.stun.twilio.com:3478' },
+      { urls: 'stun:stun.services.mozilla.com' },
+      { urls: 'stun:stun.nextcloud.com:443' },
+    ],
+    iceCandidatePoolSize: 10,
+  },
+};
+
 export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoiceProps) {
   // Room state
   const [inRoom, setInRoom] = useState<boolean>(false);
@@ -112,6 +131,22 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
   const localAnalyserRef = useRef<AnalyserNode | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const friendVadFramesRef = useRef<Map<string, number>>(new Map());
+
+  // Real-time synchronization refs for event callbacks
+  const currentUserRef = useRef<Friend>(currentUser);
+  useEffect(() => {
+    currentUserRef.current = currentUser;
+  }, [currentUser]);
+
+  const isHostRef = useRef<boolean>(isHost);
+  useEffect(() => {
+    isHostRef.current = isHost;
+  }, [isHost]);
+
+  const activeRoomCodeRef = useRef<string>(activeRoomCode);
+  useEffect(() => {
+    activeRoomCodeRef.current = activeRoomCode;
+  }, [activeRoomCode]);
 
   // Enumerate devices
   const refreshDevices = useCallback(async () => {
@@ -542,11 +577,15 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
   const setupDataConnection = useCallback((conn: DataConnection) => {
     dataConnsRef.current.set(conn.peer, conn);
 
-    conn.on('open', () => {
-      conn.send({
-        type: 'profile_handshake',
-        user: { ...currentUser, isHost },
-      });
+    const sendHandshake = () => {
+      try {
+        conn.send({
+          type: 'profile_handshake',
+          user: { ...currentUserRef.current, isHost: isHostRef.current },
+        });
+      } catch (err) {
+        console.warn('Handshake send error:', err);
+      }
 
       if (localScreenStreamRef.current && peerRef.current) {
         const sc = peerRef.current.call(conn.peer, localScreenStreamRef.current, {
@@ -554,19 +593,26 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
             type: 'screen-share',
             resolution: screenShareInfo.resolution,
             fps: screenShareInfo.fps,
-            sharerId: currentUser.id,
-            sharerName: currentUser.name,
+            sharerId: currentUserRef.current.id,
+            sharerName: currentUserRef.current.name,
           },
         });
         screenCallsRef.current.set(conn.peer, sc);
       }
-    });
+    };
+
+    if (conn.open) {
+      sendHandshake();
+    } else {
+      conn.on('open', sendHandshake);
+    }
 
     conn.on('data', (data: unknown) => {
       const payload = data as {
         type: string;
         user?: Friend;
         message?: Message;
+        peers?: string[];
         targetId?: string;
         sharerId?: string;
         sharerName?: string;
@@ -575,12 +621,66 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
       };
 
       if (payload.type === 'profile_handshake' && payload.user) {
+        const remoteUser = { ...payload.user, id: conn.peer };
         setConnectedPeers((prev) => {
           const exists = prev.find((p) => p.id === conn.peer);
           if (exists) {
-            return prev.map((p) => (p.id === conn.peer ? { ...p, ...payload.user!, id: conn.peer } : p));
+            return prev.map((p) => (p.id === conn.peer ? remoteUser : p));
           }
-          return [...prev, { ...payload.user!, id: conn.peer }];
+          return [...prev, remoteUser];
+        });
+
+        // Immediately reply with handshake ack so the other side receives our profile
+        try {
+          conn.send({
+            type: 'profile_handshake_ack',
+            user: { ...currentUserRef.current, isHost: isHostRef.current },
+          });
+        } catch (err) {
+          console.warn('ACK send error:', err);
+        }
+
+        // Host: announce other existing peers for full mesh
+        if (isHostRef.current) {
+          const otherPeers = Array.from(dataConnsRef.current.keys()).filter((id) => id !== conn.peer);
+          if (otherPeers.length > 0) {
+            try {
+              conn.send({
+                type: 'mesh_peers',
+                peers: otherPeers,
+              });
+            } catch {}
+          }
+        }
+
+        setInRoom(true);
+        setIsConnected(true);
+        setConnectionStatus(`Oda #${activeRoomCodeRef.current} (Aktif)`);
+      } else if (payload.type === 'profile_handshake_ack' && payload.user) {
+        const remoteUser = { ...payload.user, id: conn.peer };
+        setConnectedPeers((prev) => {
+          const exists = prev.find((p) => p.id === conn.peer);
+          if (exists) {
+            return prev.map((p) => (p.id === conn.peer ? remoteUser : p));
+          }
+          return [...prev, remoteUser];
+        });
+        setInRoom(true);
+        setIsConnected(true);
+        setConnectionStatus(`Odaya Bağlandı: #${activeRoomCodeRef.current}`);
+      } else if (payload.type === 'mesh_peers' && Array.isArray(payload.peers)) {
+        payload.peers.forEach((otherPeerId) => {
+          if (peerRef.current && !dataConnsRef.current.has(otherPeerId) && otherPeerId !== peerRef.current.id) {
+            const otherConn = peerRef.current.connect(otherPeerId, { reliable: true });
+            setupDataConnection(otherConn);
+            if (localStreamRef.current && !callsRef.current.has(otherPeerId)) {
+              const call = peerRef.current.call(otherPeerId, localStreamRef.current);
+              call.on('stream', (remoteStream) => {
+                handleIncomingStream(otherPeerId, remoteStream);
+              });
+              callsRef.current.set(otherPeerId, call);
+            }
+          }
         });
       } else if (payload.type === 'profile_update' && payload.user) {
         setConnectedPeers((prev) =>
@@ -632,7 +732,11 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
         return prev;
       });
     });
-  }, [cleanupPeer, currentUser, isHost, leaveOrEndRoom, onReceiveMessage, screenShareInfo.fps, screenShareInfo.resolution]);
+
+    conn.on('error', (err) => {
+      console.warn('Data connection error with peer', conn.peer, err);
+    });
+  }, [cleanupPeer, leaveOrEndRoom, onReceiveMessage, screenShareInfo.fps, screenShareInfo.resolution]);
 
   // Attach generic peer listeners
   const attachPeerListeners = useCallback((peer: Peer) => {
@@ -675,12 +779,25 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
         return;
       }
 
+      // Voice call answer
       if (localStreamRef.current) {
         call.answer(localStreamRef.current);
+      } else {
+        initLocalAudio().then((stream) => {
+          if (stream) {
+            call.answer(stream);
+          } else {
+            call.answer();
+          }
+        });
       }
 
       call.on('stream', (remoteStream) => {
         handleIncomingStream(call.peer, remoteStream);
+      });
+
+      call.on('error', (err) => {
+        console.warn('Voice call error on peer', call.peer, err);
       });
 
       callsRef.current.set(call.peer, call);
@@ -689,7 +806,7 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
     peer.on('connection', (conn) => {
       setupDataConnection(conn);
     });
-  }, [setupDataConnection]);
+  }, [initLocalAudio, setupDataConnection]);
 
   // Create room on-demand (becomes Host)
   const createRoom = async () => {
@@ -703,7 +820,7 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
 
     const code = Math.floor(1000 + Math.random() * 9000).toString();
     const hostPeerId = `nexus-${code}`;
-    const peer = new Peer(hostPeerId, { debug: 1 });
+    const peer = new Peer(hostPeerId, PEER_ICE_CONFIG);
     peerRef.current = peer;
 
     peer.on('open', (id) => {
@@ -717,7 +834,12 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
 
     peer.on('error', (err) => {
       console.warn('Peer error:', err);
-      setConnectionStatus('Bağlantı hatası, tekrar deneyin.');
+      if ((err as any)?.type === 'unavailable-id') {
+        // Retry with a fresh code if 4-digit code is taken on signaling server
+        createRoom();
+      } else {
+        setConnectionStatus('Bağlantı hatası, tekrar deneyin.');
+      }
     });
 
     attachPeerListeners(peer);
@@ -739,33 +861,55 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
 
     const guestSuffix = Math.floor(1000 + Math.random() * 9000).toString();
     const guestPeerId = `nexus-g-${guestSuffix}`;
-    const peer = new Peer(guestPeerId, { debug: 1 });
+    const peer = new Peer(guestPeerId, PEER_ICE_CONFIG);
     peerRef.current = peer;
 
     peer.on('open', (myId) => {
       setMyPeerId(myId);
       setActiveRoomCode(cleanCode);
       setIsHost(false);
-      setInRoom(true);
-      setIsConnected(true);
-      setConnectionStatus(`Odaya Bağlandı: #${cleanCode}`);
+      setConnectionStatus(`Odaya bağlanılıyor: #${cleanCode}...`);
 
       const targetHost = `nexus-${cleanCode}`;
-      const conn = peer.connect(targetHost);
+      const conn = peer.connect(targetHost, { reliable: true });
       setupDataConnection(conn);
 
+      const callHost = (streamToUse: MediaStream) => {
+        if (!callsRef.current.has(targetHost)) {
+          const call = peer.call(targetHost, streamToUse);
+          call.on('stream', (remoteStream) => {
+            handleIncomingStream(targetHost, remoteStream);
+          });
+          call.on('error', (err) => {
+            console.warn('Guest call error:', err);
+          });
+          callsRef.current.set(targetHost, call);
+        }
+      };
+
       if (localStreamRef.current) {
-        const call = peer.call(targetHost, localStreamRef.current);
-        call.on('stream', (remoteStream) => {
-          handleIncomingStream(targetHost, remoteStream);
+        callHost(localStreamRef.current);
+      } else {
+        initLocalAudio().then((s) => {
+          if (s) callHost(s);
         });
-        callsRef.current.set(targetHost, call);
       }
+
+      // Timeout warning if host doesn't answer within 12 seconds
+      setTimeout(() => {
+        const c = dataConnsRef.current.get(targetHost);
+        if (!c || !c.open) {
+          setConnectionStatus('Odaya ulaşılamadı. Kodun doğruluğunu veya oda sahibini kontrol edin.');
+          setRoomNotification('Oda bulunamadı veya oda sahibi henüz bağlanmadı.');
+        }
+      }, 12000);
     });
 
     peer.on('error', (err) => {
       console.warn('Odaya katılma hatası:', err);
       setConnectionStatus('Odaya bağlanılamadı. Kodun doğruluğunu kontrol edin.');
+      setInRoom(false);
+      setIsConnected(false);
     });
 
     attachPeerListeners(peer);
