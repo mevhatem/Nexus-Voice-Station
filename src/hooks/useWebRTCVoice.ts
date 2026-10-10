@@ -21,7 +21,7 @@ export interface AudioDevice {
   label: string;
 }
 
-// Reliable STUN servers for NAT traversal
+// Reliable global STUN servers for NAT traversal
 const PEER_ICE_CONFIG = {
   debug: 1,
   config: {
@@ -29,8 +29,12 @@ const PEER_ICE_CONFIG = {
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
       { urls: 'stun:stun2.l.google.com:19302' },
+      { urls: 'stun:stun3.l.google.com:19302' },
+      { urls: 'stun:stun4.l.google.com:19302' },
       { urls: 'stun:stun.cloudflare.com:3478' },
+      { urls: 'stun:global.stun.twilio.com:3478' },
     ],
+    sdpSemantics: 'unified-plan',
   },
 };
 
@@ -580,13 +584,34 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
     dataConnsRef.current.set(conn.peer, conn);
 
     const sendHandshake = () => {
-      try {
-        conn.send({
-          type: 'profile_handshake',
-          user: { ...currentUserRef.current, isHost: isHostRef.current },
-        });
-      } catch (err) {
-        console.warn('Handshake send error:', err);
+      const doSend = () => {
+        try {
+          if (conn.open) {
+            conn.send({
+              type: 'profile_handshake',
+              user: { ...currentUserRef.current, isHost: isHostRef.current },
+            });
+          }
+        } catch (err) {
+          console.warn('Handshake send error:', err);
+        }
+      };
+
+      doSend();
+      // Retry handshake at 800ms and 2000ms to guarantee delivery over high-latency networks
+      setTimeout(doSend, 800);
+      setTimeout(doSend, 2000);
+
+      // WebRTC DataChannel connection confirmed!
+      if (!isHostRef.current) {
+        handshakeReceivedRef.current = true;
+        if (joinTimeoutRef.current) {
+          clearTimeout(joinTimeoutRef.current);
+          joinTimeoutRef.current = null;
+        }
+        setInRoom(true);
+        setIsConnected(true);
+        setConnectionStatus(`Odaya Bağlandı: #${activeRoomCodeRef.current}`);
       }
 
       if (localScreenStreamRef.current && peerRef.current) {
@@ -602,6 +627,19 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
         screenCallsRef.current.set(conn.peer, sc);
       }
     };
+
+    try {
+      const pc = (conn as any).peerConnection as RTCPeerConnection | undefined;
+      if (pc) {
+        pc.oniceconnectionstatechange = () => {
+          console.log('[NEXUS ICE]', conn.peer, pc.iceConnectionState);
+          if (pc.iceConnectionState === 'failed') {
+            console.warn('[NEXUS ICE] Restarting ICE for peer:', conn.peer);
+            (pc as any).restartIce?.();
+          }
+        };
+      }
+    } catch {}
 
     if (conn.open) {
       sendHandshake();
@@ -885,13 +923,23 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
     if (joinTimeoutRef.current) {
       clearTimeout(joinTimeoutRef.current);
     }
+    setTimeout(() => {
+      if (!handshakeReceivedRef.current) {
+        setConnectionStatus(`Odaya bağlanılıyor: #${cleanCode} (P2P ağ geçidi taranıyor...)`);
+      }
+    }, 4000);
+    setTimeout(() => {
+      if (!handshakeReceivedRef.current) {
+        setConnectionStatus(`Odaya bağlanılıyor: #${cleanCode} (Bağlantı kuruluyor, lütfen bekleyin...)`);
+      }
+    }, 10000);
     joinTimeoutRef.current = setTimeout(() => {
       if (!handshakeReceivedRef.current) {
         console.warn('[NEXUS GUEST] Join timeout exceeded without handshake.');
-        setRoomNotification(`Oda bulunamadı veya yanıt vermiyor (#${cleanCode}). Oda yöneticisinin odayı açık tuttuğundan emin olun.`);
+        setRoomNotification(`Oda bulunamadı veya yanıt vermiyor (#${cleanCode}). Oda yöneticisinin oda sayfasında açık beklediğinden emin olun.`);
         leaveOrEndRoom();
       }
-    }, 12000);
+    }, 30000);
 
     const guestSuffix = Math.floor(1000 + Math.random() * 9000).toString();
     const guestPeerId = `nexus-g-${guestSuffix}`;
@@ -904,8 +952,6 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
       setMyPeerId(myId);
       setActiveRoomCode(cleanCode);
       setIsHost(false);
-      // We do NOT call setInRoom(true) here!
-      // inRoom will be set to true upon receiving profile_handshake or profile_handshake_ack.
       setConnectionStatus(`Odaya bağlanılıyor: #${cleanCode}...`);
 
       const targetHost = `nexus-${cleanCode}`;
@@ -920,6 +966,14 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
           call.on('stream', (remoteStream) => {
             console.log('[NEXUS GUEST] Received audio stream from host');
             handleIncomingStream(targetHost, remoteStream);
+            handshakeReceivedRef.current = true;
+            if (joinTimeoutRef.current) {
+              clearTimeout(joinTimeoutRef.current);
+              joinTimeoutRef.current = null;
+            }
+            setInRoom(true);
+            setIsConnected(true);
+            setConnectionStatus(`Odaya Bağlandı: #${cleanCode}`);
           });
           call.on('error', (err) => {
             console.warn('[NEXUS GUEST] Guest call error:', err);
