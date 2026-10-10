@@ -21,7 +21,7 @@ export interface AudioDevice {
   label: string;
 }
 
-// Global high-speed STUN servers for robust NAT / CGNAT traversal across all ISPs
+// Reliable STUN servers for NAT traversal
 const PEER_ICE_CONFIG = {
   debug: 1,
   config: {
@@ -29,14 +29,7 @@ const PEER_ICE_CONFIG = {
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
       { urls: 'stun:stun2.l.google.com:19302' },
-      { urls: 'stun:stun3.l.google.com:19302' },
-      { urls: 'stun:stun4.l.google.com:19302' },
-      { urls: 'stun:stun.cloudflare.com:3478' },
-      { urls: 'stun:global.stun.twilio.com:3478' },
-      { urls: 'stun:stun.services.mozilla.com' },
-      { urls: 'stun:stun.nextcloud.com:443' },
     ],
-    iceCandidatePoolSize: 10,
   },
 };
 
@@ -868,10 +861,12 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
       setMyPeerId(myId);
       setActiveRoomCode(cleanCode);
       setIsHost(false);
-      setConnectionStatus(`Odaya bağlanılıyor: #${cleanCode}...`);
+      setInRoom(true);
+      setIsConnected(true);
+      setConnectionStatus(`Odaya Bağlandı: #${cleanCode}`);
 
       const targetHost = `nexus-${cleanCode}`;
-      const conn = peer.connect(targetHost, { reliable: true });
+      const conn = peer.connect(targetHost);
       setupDataConnection(conn);
 
       const callHost = (streamToUse: MediaStream) => {
@@ -894,22 +889,11 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
           if (s) callHost(s);
         });
       }
-
-      // Timeout warning if host doesn't answer within 12 seconds
-      setTimeout(() => {
-        const c = dataConnsRef.current.get(targetHost);
-        if (!c || !c.open) {
-          setConnectionStatus('Odaya ulaşılamadı. Kodun doğruluğunu veya oda sahibini kontrol edin.');
-          setRoomNotification('Oda bulunamadı veya oda sahibi henüz bağlanmadı.');
-        }
-      }, 12000);
     });
 
     peer.on('error', (err) => {
       console.warn('Odaya katılma hatası:', err);
       setConnectionStatus('Odaya bağlanılamadı. Kodun doğruluğunu kontrol edin.');
-      setInRoom(false);
-      setIsConnected(false);
     });
 
     attachPeerListeners(peer);
