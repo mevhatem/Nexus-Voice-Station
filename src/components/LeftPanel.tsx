@@ -57,6 +57,7 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
   const [copied, setCopied] = useState(false);
   const [inputCode, setInputCode] = useState('');
   const [volumeMenuPeerId, setVolumeMenuPeerId] = useState<string | null>(null);
+  const isConnecting = connectionStatus.includes('...') || connectionStatus.toLowerCase().includes('bağlanılıyor') || connectionStatus.toLowerCase().includes('oluşturuluyor');
 
   const handleCopyCode = () => {
     if (!activeRoomCode) return;
@@ -118,10 +119,20 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
               </p>
               <button
                 onClick={onCreateRoom}
-                className="w-full py-2.5 px-3 bg-gradient-to-r from-cyber-cyan to-cyber-teal text-black font-mono font-bold text-xs rounded-xl shadow-lg shadow-cyber-cyan/20 hover:opacity-95 transition-all flex items-center justify-center gap-2"
+                disabled={isConnecting}
+                className="w-full py-2.5 px-3 bg-gradient-to-r from-cyber-cyan to-cyber-teal text-black font-mono font-bold text-xs rounded-xl shadow-lg shadow-cyber-cyan/20 hover:opacity-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
-                <PlusCircle className="w-4 h-4" />
-                {t('left.createRoom')}
+                {isConnecting && connectionStatus.includes('oluşturuluyor') ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    <span>Oda Kuruluyor...</span>
+                  </>
+                ) : (
+                  <>
+                    <PlusCircle className="w-4 h-4" />
+                    <span>{t('left.createRoom')}</span>
+                  </>
+                )}
               </button>
             </div>
 
@@ -136,16 +147,30 @@ export const LeftPanel: React.FC<LeftPanelProps> = ({
                   value={inputCode}
                   onChange={(e) => setInputCode(e.target.value)}
                   placeholder={t('left.enterCodePlaceholder')}
-                  className="bg-transparent flex-1 text-xs text-white placeholder-gray-500 outline-none px-2 font-mono"
+                  disabled={isConnecting}
+                  className="bg-transparent flex-1 text-xs text-white placeholder-gray-500 outline-none px-2 font-mono disabled:opacity-50"
                 />
                 <button
                   type="submit"
-                  disabled={!inputCode.trim()}
-                  className="px-3 py-1.5 bg-cyber-cyan text-black font-mono font-bold text-xs rounded-lg hover:bg-opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                  disabled={!inputCode.trim() || isConnecting}
+                  className="px-3 py-1.5 bg-cyber-cyan text-black font-mono font-bold text-xs rounded-lg hover:bg-opacity-90 transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-1.5"
                 >
-                  {t('left.join')}
+                  {isConnecting && connectionStatus.includes('bağlanılıyor') ? (
+                    <>
+                      <span className="w-3 h-3 border border-black border-t-transparent rounded-full animate-spin" />
+                      <span>{t('left.join')}...</span>
+                    </>
+                  ) : (
+                    <span>{t('left.join')}</span>
+                  )}
                 </button>
               </div>
+              {isConnecting && (
+                <div className="flex items-center gap-2 text-cyber-cyan text-[11px] font-mono animate-pulse">
+                  <span className="w-2 h-2 rounded-full bg-cyber-cyan animate-ping" />
+                  <span>{connectionStatus}</span>
+                </div>
+              )}
               <p className="text-[10px] text-gray-500">
                 {t('left.shareHint')}
               </p>

@@ -1,6 +1,6 @@
 [package]
 name = "tauri-chat"
-version = "0.1.0"
+version = "1.0.4"
 description = "Ultra Lightweight Discord alternative built with Tauri v2"
 authors = ["Antigravity"]
 edition = "2021"

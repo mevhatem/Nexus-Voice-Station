@@ -29,6 +29,7 @@ const PEER_ICE_CONFIG = {
       { urls: 'stun:stun.l.google.com:19302' },
       { urls: 'stun:stun1.l.google.com:19302' },
       { urls: 'stun:stun2.l.google.com:19302' },
+      { urls: 'stun:stun.cloudflare.com:3478' },
     ],
   },
 };
@@ -118,6 +119,8 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
   const dataConnsRef = useRef<Map<string, DataConnection>>(new Map());
   const remoteAudioElementsRef = useRef<Map<string, HTMLAudioElement>>(new Map());
   const isDeafenedRef = useRef<boolean>(false);
+  const joinTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handshakeReceivedRef = useRef<boolean>(false);
 
   // Audio Context & Analyser
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -558,6 +561,12 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
       peerRef.current = null;
     }
 
+    if (joinTimeoutRef.current) {
+      clearTimeout(joinTimeoutRef.current);
+      joinTimeoutRef.current = null;
+    }
+    handshakeReceivedRef.current = false;
+
     setInRoom(false);
     setIsHost(false);
     setActiveRoomCode('');
@@ -614,6 +623,12 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
       };
 
       if (payload.type === 'profile_handshake' && payload.user) {
+        handshakeReceivedRef.current = true;
+        if (joinTimeoutRef.current) {
+          clearTimeout(joinTimeoutRef.current);
+          joinTimeoutRef.current = null;
+        }
+
         const remoteUser = { ...payload.user, id: conn.peer };
         setConnectedPeers((prev) => {
           const exists = prev.find((p) => p.id === conn.peer);
@@ -650,6 +665,12 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
         setIsConnected(true);
         setConnectionStatus(`Oda #${activeRoomCodeRef.current} (Aktif)`);
       } else if (payload.type === 'profile_handshake_ack' && payload.user) {
+        handshakeReceivedRef.current = true;
+        if (joinTimeoutRef.current) {
+          clearTimeout(joinTimeoutRef.current);
+          joinTimeoutRef.current = null;
+        }
+
         const remoteUser = { ...payload.user, id: conn.peer };
         setConnectedPeers((prev) => {
           const exists = prev.find((p) => p.id === conn.peer);
@@ -711,6 +732,10 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
 
     conn.on('close', () => {
       cleanupPeer(conn.peer);
+      if (!isHostRef.current && conn.peer === `nexus-${activeRoomCodeRef.current}`) {
+        leaveOrEndRoom();
+        setRoomNotification('Oda yöneticisi odadan ayrıldı veya bağlantısı koptu.');
+      }
       setScreenShareInfo((prev) => {
         if (prev.sharerId === conn.peer) {
           return {
@@ -813,10 +838,12 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
 
     const code = Math.floor(1000 + Math.random() * 9000).toString();
     const hostPeerId = `nexus-${code}`;
+    console.log('[NEXUS HOST] Initializing Peer with ID:', hostPeerId);
     const peer = new Peer(hostPeerId, PEER_ICE_CONFIG);
     peerRef.current = peer;
 
     peer.on('open', (id) => {
+      console.log('[NEXUS HOST] Peer successfully OPEN on signaling server. ID:', id);
       setMyPeerId(id);
       setActiveRoomCode(code);
       setIsHost(true);
@@ -826,9 +853,10 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
     });
 
     peer.on('error', (err) => {
-      console.warn('Peer error:', err);
+      console.warn('[NEXUS HOST] Peer error:', (err as any)?.type, err?.message || err);
       if ((err as any)?.type === 'unavailable-id') {
         // Retry with a fresh code if 4-digit code is taken on signaling server
+        console.log('[NEXUS HOST] ID taken, retrying with new code...');
         createRoom();
       } else {
         setConnectionStatus('Bağlantı hatası, tekrar deneyin.');
@@ -844,39 +872,57 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
     const cleanCode = code.replace('#', '').trim();
     if (!cleanCode) return false;
 
+    console.log('[NEXUS GUEST] Joining room with code:', cleanCode);
     setConnectionStatus(`Odaya bağlanılıyor: #${cleanCode}...`);
     setRoomNotification(null);
+    handshakeReceivedRef.current = false;
     await initLocalAudio();
 
     if (peerRef.current) {
       peerRef.current.destroy();
     }
 
+    if (joinTimeoutRef.current) {
+      clearTimeout(joinTimeoutRef.current);
+    }
+    joinTimeoutRef.current = setTimeout(() => {
+      if (!handshakeReceivedRef.current) {
+        console.warn('[NEXUS GUEST] Join timeout exceeded without handshake.');
+        setRoomNotification(`Oda bulunamadı veya yanıt vermiyor (#${cleanCode}). Oda yöneticisinin odayı açık tuttuğundan emin olun.`);
+        leaveOrEndRoom();
+      }
+    }, 12000);
+
     const guestSuffix = Math.floor(1000 + Math.random() * 9000).toString();
     const guestPeerId = `nexus-g-${guestSuffix}`;
+    console.log('[NEXUS GUEST] Initializing Guest Peer with ID:', guestPeerId);
     const peer = new Peer(guestPeerId, PEER_ICE_CONFIG);
     peerRef.current = peer;
 
     peer.on('open', (myId) => {
+      console.log('[NEXUS GUEST] Guest Peer OPEN with ID:', myId);
       setMyPeerId(myId);
       setActiveRoomCode(cleanCode);
       setIsHost(false);
-      setInRoom(true);
-      setIsConnected(true);
-      setConnectionStatus(`Odaya Bağlandı: #${cleanCode}`);
+      // We do NOT call setInRoom(true) here!
+      // inRoom will be set to true upon receiving profile_handshake or profile_handshake_ack.
+      setConnectionStatus(`Odaya bağlanılıyor: #${cleanCode}...`);
 
       const targetHost = `nexus-${cleanCode}`;
-      const conn = peer.connect(targetHost);
+      console.log('[NEXUS GUEST] Connecting to target host:', targetHost);
+      const conn = peer.connect(targetHost, { reliable: true });
       setupDataConnection(conn);
 
       const callHost = (streamToUse: MediaStream) => {
         if (!callsRef.current.has(targetHost)) {
+          console.log('[NEXUS GUEST] Calling host with audio stream:', targetHost);
           const call = peer.call(targetHost, streamToUse);
           call.on('stream', (remoteStream) => {
+            console.log('[NEXUS GUEST] Received audio stream from host');
             handleIncomingStream(targetHost, remoteStream);
           });
           call.on('error', (err) => {
-            console.warn('Guest call error:', err);
+            console.warn('[NEXUS GUEST] Guest call error:', err);
           });
           callsRef.current.set(targetHost, call);
         }
@@ -892,8 +938,18 @@ export function useWebRTCVoice({ currentUser, onReceiveMessage }: UseWebRTCVoice
     });
 
     peer.on('error', (err) => {
-      console.warn('Odaya katılma hatası:', err);
-      setConnectionStatus('Odaya bağlanılamadı. Kodun doğruluğunu kontrol edin.');
+      const errType = (err as any)?.type;
+      console.warn('[NEXUS GUEST] Odaya katılma hatası:', errType, err?.message || err);
+      if (joinTimeoutRef.current) {
+        clearTimeout(joinTimeoutRef.current);
+        joinTimeoutRef.current = null;
+      }
+      if (errType === 'peer-unavailable') {
+        setRoomNotification(`Oda bulunamadı (#${cleanCode}). Oda yöneticisinin odayı açık tuttuğundan ve 4 haneli kodu doğru girdiğinizden emin olun.`);
+      } else {
+        setRoomNotification(`Odaya bağlanılamadı: ${err?.message || 'Bağlantı hatası'}`);
+      }
+      leaveOrEndRoom();
     });
 
     attachPeerListeners(peer);
